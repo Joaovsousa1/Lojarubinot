@@ -4,17 +4,20 @@ import { supabase } from '../lib/supabase'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser]             = useState(null)
+  const [profile, setProfile]       = useState(null)
+  const [loading, setLoading]       = useState(true)
+  const [profileLoading, setProfileLoading] = useState(false)
 
   const fetchProfile = async (userId) => {
+    setProfileLoading(true)
     const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
     setProfile(data ?? null)
+    setProfileLoading(false)
   }
 
   useEffect(() => {
@@ -51,7 +54,7 @@ export function AuthProvider({ children }) {
   )
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, planActive, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading: loading || profileLoading, isAdmin, planActive, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )
