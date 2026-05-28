@@ -159,20 +159,26 @@ function DashPreview() {
 export default function LoginPage() {
   const { signIn, user } = useAuth()
   const navigate = useNavigate()
-  const [mode, setMode]         = useState('login')
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName]         = useState('')
-  const [confirm, setConfirm]   = useState('')
-  const [error, setError]       = useState('')
-  const [success, setSuccess]   = useState('')
-  const [loading, setLoading]   = useState(false)
-  const [showPw, setShowPw]     = useState(false)
+  const [mode, setMode]             = useState('login')
+  const [email, setEmail]           = useState('')
+  const [password, setPassword]     = useState('')
+  const [name, setName]             = useState('')
+  const [confirm, setConfirm]       = useState('')
+  const [error, setError]           = useState('')
+  const [success, setSuccess]       = useState('')
+  const [loading, setLoading]       = useState(false)
+  const [showPw, setShowPw]         = useState(false)
+  const [rememberEmail, setRememberEmail] = useState(false)
   const formRef = useRef(null)
 
   useEffect(() => {
     if (user) navigate('/', { replace: true })
   }, [user, navigate])
+
+  useEffect(() => {
+    const saved = localStorage.getItem('rubinot_remember_email')
+    if (saved) { setEmail(saved); setRememberEmail(true) }
+  }, [])
 
   const switchMode = (m) => {
     setMode(m); setError(''); setSuccess('')
@@ -181,6 +187,8 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)
+    if (rememberEmail) localStorage.setItem('rubinot_remember_email', email)
+    else localStorage.removeItem('rubinot_remember_email')
     const err = await signIn(email, password)
     setLoading(false)
     if (err) setError(err.message ?? 'E-mail ou senha incorretos.')
@@ -391,6 +399,17 @@ export default function LoginPage() {
                   onFocus={e => { e.target.style.borderColor = '#9333ea'; e.target.style.boxShadow = '0 0 0 3px rgba(147,51,234,0.18)' }}
                   onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.15)'; e.target.style.boxShadow = 'none' }}
                 />
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={rememberEmail}
+                    onChange={e => setRememberEmail(e.target.checked)}
+                    style={{ width: 15, height: 15, accentColor: '#9333ea', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: 12.5, color: '#94a3b8', fontWeight: 500 }}>Lembrar e-mail</span>
+                </label>
               </div>
               <div style={{ marginBottom: 10 }}>
                 <label style={{ display: 'block', fontSize: 12.5, color: '#94a3b8', marginBottom: 7, fontWeight: 600, letterSpacing: '0.03em' }}>Senha</label>
