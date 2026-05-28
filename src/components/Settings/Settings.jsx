@@ -34,9 +34,9 @@ export default function Settings() {
   const handleSavePrices = () => {
     updateSettings({
       coinPrices: {
-        buy1k:  parseFloat(prices.buy1k)  || 0.86,
-        buy10k: parseFloat(prices.buy10k) || 0.87,
-        sell:   parseFloat(prices.sell)   || 0.92,
+        buy1k:  parseFloat(prices.buy1k)  || 87,
+        buy10k: parseFloat(prices.buy10k) || 87,
+        sell:   parseFloat(prices.sell)   || 92,
       },
       minCoinBalance: parseInt(minBalance) || 0,
     })
@@ -147,15 +147,16 @@ export default function Settings() {
       </Section>
 
       {/* Coin prices */}
-      <Section title="Preços padrão de Coins">
+      <Section title="Preços de Coins (R$ por 1.000 coins)">
+        <p className="text-xs text-gray-500 -mt-2">Ex: se 1.000 coins custa R$87, coloque 87</p>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { key: 'buy1k',  label: 'Compra pacote 1k (R$/k)' },
-            { key: 'buy10k', label: 'Compra pacote 10k (R$/k)' },
-            { key: 'sell',   label: 'Venda padrão (R$/k)' },
+            { key: 'buy1k',  label: 'Compra pacote 1k' },
+            { key: 'buy10k', label: 'Compra pacote 10k' },
+            { key: 'sell',   label: 'Preço de venda' },
           ].map(({ key, label }) => (
             <div key={key}>
-              <label className={LABEL}>{label}</label>
+              <label className={LABEL}>{label} (R$/k)</label>
               <input type="number" step="0.01" min="0"
                 className={INPUT} style={INPUT_STYLE}
                 value={prices[key]}

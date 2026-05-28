@@ -12,7 +12,7 @@ const DEFAULT_SETTINGS = {
     'Halorian','Lunarian','Mystian','Serenian','Solarian',
     'Spectrum','Tenebrium','Vesperia',
   ],
-  coinPrices: { buy1k: 0.86, buy10k: 0.87, sell: 0.92 },
+  coinPrices: { buy1k: 87, buy10k: 87, sell: 92 },
   minCoinBalance: 10000,
 }
 
@@ -41,7 +41,16 @@ export function AppProvider({ children }) {
     setCoins(c ?? [])
     setItems((it ?? []).map(dbToItem))
     setAccounts((ac ?? []).map(dbToAccount))
-    setSettings(st ? { ...DEFAULT_SETTINGS, ...st.data } : DEFAULT_SETTINGS)
+    let saved = st ? { ...DEFAULT_SETTINGS, ...st.data } : DEFAULT_SETTINGS
+    // Migração: preços antigos eram por coin (ex: 0.87), novos são por 1k (ex: 87)
+    if (saved.coinPrices.buy10k < 5) {
+      saved = { ...saved, coinPrices: {
+        buy1k:  Math.round(saved.coinPrices.buy1k  * 1000),
+        buy10k: Math.round(saved.coinPrices.buy10k * 1000),
+        sell:   Math.round(saved.coinPrices.sell   * 1000),
+      }}
+    }
+    setSettings(saved)
     setDataLoaded(true)
   }, [user])
 

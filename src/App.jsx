@@ -30,9 +30,22 @@ function AppShell() {
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#1a1025' }}>
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        {map[activeModule] ?? <Dashboard />}
-      </main>
+      <div className="flex-1 flex flex-col overflow-y-auto">
+        <main className="flex-1">
+          {map[activeModule] ?? <Dashboard />}
+        </main>
+        <footer className="text-center py-3 px-4 text-xs" style={{ color: '#4b4560', borderTop: '1px solid #2a2035' }}>
+          Site desenvolvido por <span style={{ color: '#7c3aed' }}>Kiara Store</span>
+          {' · '}
+          <a
+            href="https://wa.me/553484144427?text=Ol%C3%A1%2C%20tenho%20uma%20sugest%C3%A3o%20para%20o%20site!"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#9461f7', textDecoration: 'underline' }}>
+            Sugestões ou melhorias? Clique aqui
+          </a>
+        </footer>
+      </div>
     </div>
   )
 }
