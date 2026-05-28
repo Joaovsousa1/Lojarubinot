@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 import { generateId } from '../utils/helpers'
@@ -26,6 +26,8 @@ export function AppProvider({ children }) {
   const [activeModule, setActiveModule] = useState('dashboard')
   const [dataLoaded, setDataLoaded] = useState(false)
   const [toasts, setToasts]     = useState([])
+  const loadIdRef   = useRef(0)   // race condition guard
+  const loadedForId = useRef(null) // skip reload when same user (token refresh)
 
   // ── Toast system ───────────────────────────────────────────────────────────
   const addToast = useCallback((message, type = 'error') => {
@@ -39,8 +41,9 @@ export function AppProvider({ children }) {
   }, [])
 
   // ── Load all data from Supabase ────────────────────────────────────────────
-  const loadData = useCallback(async () => {
-    if (!user) return
+  const loadData = useCallback(async (userId) => {
+    if (!userId) return
+    const myLoad = ++loadIdRef.current
     setDataLoaded(false)
 
     const [
@@ -49,28 +52,41 @@ export function AppProvider({ children }) {
       { data: ac, error: ae },
       { data: st },
     ] = await Promise.all([
-      supabase.from('coins').select('*').eq('user_id', user.id).order('date', { ascending: false }),
-      supabase.from('items').select('*').eq('user_id', user.id).order('date_entry', { ascending: false }),
-      supabase.from('accounts').select('*').eq('user_id', user.id).order('date_entry', { ascending: false }),
-      supabase.from('settings').select('*').eq('user_id', user.id).single(),
+      supabase.from('coins').select('*').eq('user_id', userId).order('date', { ascending: false }),
+      supabase.from('items').select('*').eq('user_id', userId).order('date_entry', { ascending: false }),
+      supabase.from('accounts').select('*').eq('user_id', userId).order('date_entry', { ascending: false }),
+      supabase.from('settings').select('*').eq('user_id', userId).single(),
     ])
 
-    if (ce) console.error('[loadData] coins:', ce.message)
-    if (ie) console.error('[loadData] items:', ie.message)
-    if (ae) console.error('[loadData] accounts:', ae.message)
+    // Descarta resultado se uma carga mais recente já começou
+    if (myLoad !== loadIdRef.current) return
 
-    setCoins(c ?? [])
-    setItems((it ?? []).map(dbToItem))
-    setAccounts((ac ?? []).map(dbToAccount))
+    // Só atualiza o estado se não houve erro — evita apagar dados ao falhar
+    if (ce) { addToast('Erro ao carregar coins. Tente recarregar.'); console.error('[loadData] coins:', ce.message) }
+    else setCoins(c ?? [])
+
+    if (ie) { addToast('Erro ao carregar itens. Tente recarregar.'); console.error('[loadData] items:', ie.message) }
+    else setItems((it ?? []).map(dbToItem))
+
+    if (ae) { addToast('Erro ao carregar contas. Tente recarregar.'); console.error('[loadData] accounts:', ae.message) }
+    else setAccounts((ac ?? []).map(dbToAccount))
+
     let saved = st ? { ...DEFAULT_SETTINGS, ...st.data } : DEFAULT_SETTINGS
     if (saved.coinPrices.buy10k < 5) {
       saved = { ...saved, coinPrices: DEFAULT_SETTINGS.coinPrices }
     }
     setSettings(saved)
     setDataLoaded(true)
-  }, [user])
+  }, [addToast])
 
-  useEffect(() => { loadData() }, [loadData])
+  // Só recarrega quando o ID do usuário muda — ignora refresh de token
+  useEffect(() => {
+    const uid = user?.id ?? null
+    if (uid === loadedForId.current) return
+    loadedForId.current = uid
+    if (uid) loadData(uid)
+    else { setCoins([]); setItems([]); setAccounts([]); setDataLoaded(false) }
+  }, [user?.id, loadData])
 
   // ── DB shape converters ────────────────────────────────────────────────────
   function dbToItem(row) {
@@ -332,7 +348,7 @@ export function AppProvider({ children }) {
       updateSettings, addServer, removeServer,
       exportData, importData,
       setCoins, setItems, setAccounts,
-      loadData,
+      loadData: () => user?.id && loadData(user.id),
     }}>
       {children}
     </AppContext.Provider>
