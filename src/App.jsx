@@ -1,0 +1,116 @@
+import React from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { AppProvider, useApp } from './context/AppContext'
+import { ADMIN_SLUG } from './lib/supabase'
+
+import Sidebar from './components/Layout/Sidebar'
+import Dashboard from './components/Dashboard/Dashboard'
+import CoinsModule from './components/Coins/CoinsModule'
+import ItemsModule from './components/Items/ItemsModule'
+import AccountsModule from './components/Accounts/AccountsModule'
+import Settings from './components/Settings/Settings'
+import ToolsModule from './components/Tools/ToolsModule'
+
+import LoginPage from './pages/LoginPage'
+import PlanExpiredPage from './pages/PlanExpiredPage'
+import AdminPanel from './pages/AdminPanel'
+
+// ── Main app shell ─────────────────────────────────────────────────────────
+function AppShell() {
+  const { activeModule } = useApp()
+  const map = {
+    dashboard: <Dashboard />,
+    coins:     <CoinsModule />,
+    items:     <ItemsModule />,
+    accounts:  <AccountsModule />,
+    tools:     <ToolsModule />,
+    settings:  <Settings />,
+  }
+  return (
+    <div className="flex min-h-screen" style={{ backgroundColor: '#1a1025' }}>
+      <Sidebar />
+      <main className="flex-1 overflow-y-auto">
+        {map[activeModule] ?? <Dashboard />}
+      </main>
+    </div>
+  )
+}
+
+// ── Plan expiry banner (injected into app when close to expiry) ────────────
+function ExpiryBanner() {
+  const { profile } = useAuth()
+  if (!profile?.plan_expires_at) return null
+  const daysLeft = Math.ceil((new Date(profile.plan_expires_at) - new Date()) / 86400000)
+  if (daysLeft > 7) return null
+  return (
+    <div className="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl text-sm shadow-2xl"
+      style={{
+        backgroundColor: daysLeft <= 3 ? '#7f1d1d' : '#78350f',
+        border: `1px solid ${daysLeft <= 3 ? '#dc2626' : '#d97706'}`,
+        color: daysLeft <= 3 ? '#fca5a5' : '#fde68a',
+      }}>
+      ⚠ Seu plano vence em <strong>{daysLeft} dia{daysLeft !== 1 ? 's' : ''}</strong>
+    </div>
+  )
+}
+
+// ── Route guards ───────────────────────────────────────────────────────────
+function RequireAuth({ children }) {
+  const { user, loading, planActive, isAdmin } = useAuth()
+  if (loading) return <LoadingScreen />
+  if (!user) return <Navigate to="/login" replace />
+  if (isAdmin) return children            // admin never gets blocked
+  if (!planActive) return <PlanExpiredPage />
+  return (
+    <>
+      {children}
+      <ExpiryBanner />
+    </>
+  )
+}
+
+function RequireAdmin({ children }) {
+  const { user, loading, isAdmin } = useAuth()
+  if (loading) return <LoadingScreen />
+  if (!user || !isAdmin) return <Navigate to="/login" replace />
+  return children
+}
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#1a1025' }}>
+      <div className="text-center space-y-3">
+        <div className="text-4xl">💎</div>
+        <div className="text-sm text-gray-500">Carregando...</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Root ───────────────────────────────────────────────────────────────────
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+
+          <Route path={`/${ADMIN_SLUG}`} element={
+            <RequireAdmin>
+              <AdminPanel />
+            </RequireAdmin>
+          } />
+
+          <Route path="/*" element={
+            <RequireAuth>
+              <AppProvider>
+                <AppShell />
+              </AppProvider>
+            </RequireAuth>
+          } />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
+  )
+}
