@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Plus, Trash2, Download, Upload, FileText } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, getCurrentMonth, getLastNMonths } from '../../utils/helpers'
@@ -23,6 +23,11 @@ export default function Settings() {
   const [minBalance, setMinBalance] = useState(settings.minCoinBalance ?? 10000)
   const [importMsg, setImportMsg] = useState('')
   const fileRef = useRef(null)
+
+  useEffect(() => {
+    setPrices({ ...settings.coinPrices })
+    setMinBalance(settings.minCoinBalance ?? 10000)
+  }, [settings.coinPrices, settings.minCoinBalance])
 
   const handleAddServer = () => {
     const s = newServer.trim()
