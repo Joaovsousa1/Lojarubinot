@@ -105,5 +105,6 @@ export const SET_COLORS = {
   'Eldritch':       { primary: '#0d9488', secondary: '#134e4a', accent: '#5eead4', glow: '#0d948844' },
   'Ferumbras':      { primary: '#7e22ce', secondary: '#3b0764', accent: '#d8b4fe', glow: '#7e22ce44' },
   'Magician':       { primary: '#6366f1', secondary: '#1e1b4b', accent: '#a5b4fc', glow: '#6366f144' },
+  'Primal':         { primary: '#06b6d4', secondary: '#0c4a6e', accent: '#67e8f9', glow: '#06b6d444' },
   'Outros':         { primary: '#6b7280', secondary: '#374151', accent: '#d1d5db', glow: '#6b728044' },
 }

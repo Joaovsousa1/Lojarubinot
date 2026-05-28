@@ -167,6 +167,20 @@ export const ITEMS_DATABASE = [
   item('Warsinger Bow',    'Warsinger_Bow',    3, 'arma',     'Outros'),
   item('The Devileye',     'The_Devileye',     3, 'acessório','Outros'),
   item('Deepling Staff',   'Deepling_Staff',   3, 'arma',     'Outros'),
+
+  // ── PRIMAL SET / ALICORN (Class 4) ────────────────────────────────────────
+  item('Alicorn Headguard',                'Alicorn_Headguard',                4, 'armadura', 'Primal'),
+  item('Primal Robe of the Vizier',        'Primal_Robe_of_the_Vizier',        4, 'armadura', 'Primal'),
+  item('Primal Plate of the Stalwart',     'Primal_Plate_of_the_Stalwart',     4, 'armadura', 'Primal'),
+  item('Primal Surcoat of the Swiftstrike','Primal_Surcoat_of_the_Swiftstrike',4, 'armadura', 'Primal'),
+  item('Alicorn Quiver',                   'Alicorn_Quiver',                   4, 'misc',     'Primal'),
+  item('Alicorn Twigs',                    'Alicorn_Twigs',                    4, 'arma',     'Primal'),
+  item('Alicorn Wand',                     'Alicorn_Wand',                     4, 'arma',     'Primal'),
+  item('Alicorn Blade',                    'Alicorn_Blade',                    4, 'arma',     'Primal'),
+  item('Alicorn Mace',                     'Alicorn_Mace',                     4, 'arma',     'Primal'),
+  item('Alicorn Battleaxe',                'Alicorn_Battleaxe',                4, 'arma',     'Primal'),
+  item('Alicorn Bow',                      'Alicorn_Bow',                      4, 'arma',     'Primal'),
+  item('Alicorn Spellbook',                'Alicorn_Spellbook',                4, 'misc',     'Primal'),
 ]
 
 export const getItemByName = (name) =>

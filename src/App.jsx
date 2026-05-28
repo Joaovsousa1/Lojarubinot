@@ -15,6 +15,40 @@ import ToolsModule from './components/Tools/ToolsModule'
 import LoginPage from './pages/LoginPage'
 import PlanExpiredPage from './pages/PlanExpiredPage'
 import AdminPanel from './pages/AdminPanel'
+import MonthlyReport from './components/Reports/MonthlyReport'
+
+// ── Toast notifications ────────────────────────────────────────────────────
+function ToastContainer() {
+  const { toasts, removeToast } = useApp()
+  if (!toasts.length) return null
+  return (
+    <div style={{ position: 'fixed', bottom: 24, right: 24, zIndex: 9999, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 380 }}>
+      {toasts.map(t => (
+        <div key={t.id}
+          style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            padding: '13px 16px', borderRadius: 14,
+            backgroundColor: t.type === 'success' ? '#14532d' : '#1c1020',
+            border: `1px solid ${t.type === 'success' ? '#16a34a' : '#ef4444'}`,
+            boxShadow: `0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px ${t.type === 'success' ? '#16a34a33' : '#ef444433'}`,
+            color: t.type === 'success' ? '#4ade80' : '#fca5a5',
+            fontSize: 13, fontWeight: 500, lineHeight: 1.45,
+            animation: 'slideIn 0.25s ease',
+          }}>
+          <span style={{ fontSize: 17, flexShrink: 0, marginTop: 1 }}>
+            {t.type === 'success' ? '✅' : '⚠️'}
+          </span>
+          <span style={{ flex: 1 }}>{t.message}</span>
+          <button onClick={() => removeToast(t.id)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', opacity: 0.6, fontSize: 16, padding: 0, lineHeight: 1, flexShrink: 0 }}>
+            ×
+          </button>
+        </div>
+      ))}
+      <style>{`@keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }`}</style>
+    </div>
+  )
+}
 
 // ── Main app shell ─────────────────────────────────────────────────────────
 function AppShell() {
@@ -25,10 +59,11 @@ function AppShell() {
     items:     <ItemsModule />,
     accounts:  <AccountsModule />,
     tools:     <ToolsModule />,
+    reports:   <MonthlyReport />,
     settings:  <Settings />,
   }
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#1a1025' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: '#0e0919' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-y-auto">
         <main className="flex-1">
@@ -46,6 +81,7 @@ function AppShell() {
           </a>
         </footer>
       </div>
+      <ToastContainer />
     </div>
   )
 }
