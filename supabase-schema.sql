@@ -19,8 +19,8 @@ create table if not exists public.profiles (
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$
 begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email)
+  insert into public.profiles (id, email, name, plan_active)
+  values (new.id, new.email, new.raw_user_meta_data->>'name', true)
   on conflict (id) do nothing;
   return new;
 end;
