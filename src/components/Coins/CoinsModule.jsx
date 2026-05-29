@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { Plus, Trash2, ArrowDownCircle, ArrowUpCircle, Calculator } from 'lucide-react'
+import React, { useState, useMemo, useEffect } from 'react'
+import { Plus, Trash2, ArrowDownCircle, ArrowUpCircle, Calculator, X } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import {
   formatCurrency, formatNumber, formatDateTime, generateId,
@@ -201,10 +201,46 @@ function CoinCalculator() {
   )
 }
 
+function CoinModal({ type, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const isEntrada = type === 'entrada'
+  const title = isEntrada ? '⬇ Registrar Entrada' : '⬆ Registrar Saída'
+  const accent = isEntrada ? '#16a34a' : '#dc2626'
+  const accentBg = isEntrada ? '#14532d' : '#7f1d1d'
+  const accentText = isEntrada ? '#4ade80' : '#f87171'
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl p-6 space-y-5"
+        style={{ backgroundColor: '#1c1530', border: `1px solid ${accent}`, boxShadow: `0 0 40px ${accentBg}88` }}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold" style={{ color: accentText }}>{title}</h2>
+          <button onClick={onClose} className="p-1 rounded-lg transition-colors text-gray-500 hover:text-white">
+            <X size={18} />
+          </button>
+        </div>
+        <CoinForm type={type} onClose={onClose} />
+      </div>
+    </div>
+  )
+}
+
 export default function CoinsModule() {
   const { coins, deleteCoinTransaction, settings } = useApp()
   const [tab, setTab] = useState('historico')
   const [formType, setFormType] = useState(null)
+  const [modalType, setModalType] = useState(null)
   const [filterServer, setFilterServer] = useState('')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
@@ -240,12 +276,12 @@ export default function CoinsModule() {
         <h1 className="text-2xl font-bold text-white">Coins</h1>
         <div className="flex gap-2">
           <button
-            onClick={() => { setTab('registrar'); setFormType('entrada') }}
+            onClick={() => setModalType('entrada')}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
             style={{ backgroundColor: '#14532d', color: '#4ade80', border: '1px solid #16a34a' }}
           ><ArrowDownCircle size={15} /> Entrada</button>
           <button
-            onClick={() => { setTab('registrar'); setFormType('saida') }}
+            onClick={() => setModalType('saida')}
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
             style={{ backgroundColor: '#7f1d1d', color: '#f87171', border: '1px solid #dc2626' }}
           ><ArrowUpCircle size={15} /> Saída</button>
@@ -375,6 +411,8 @@ export default function CoinsModule() {
           <CoinCalculator />
         </div>
       )}
+
+      {modalType && <CoinModal type={modalType} onClose={() => setModalType(null)} />}
     </div>
   )
 }
