@@ -144,30 +144,19 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
   const bPIX = parseFloat(form.buyPricePIX)  || 0
   const sRC  = parseFloat(form.sellPriceRC)  || 0
   const sPIX = parseFloat(form.sellPricePIX) || 0
-  const hasAny = bRC || bPIX || sRC || sPIX
+  const hasBuy  = bRC > 0 || bPIX > 0
+  const hasSell = sRC > 0 || sPIX > 0
 
-  // Lucro calculado
+  // Lucro calculado — só mostra se tiver compra E venda preenchidas
   let profitDisplay = null
-  if (hasAny) {
-    if (rcRate > 0) {
-      // Taxa configurada → converte tudo para R$
-      const profit = (sPIX + sRC * rcRate) - (bPIX + bRC * rcRate)
-      profitDisplay = (
-        <span className="font-bold" style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>
-          {formatCurrency(profit)}
-        </span>
-      )
-    } else {
-      // RC só mostra se AMBOS compra e venda forem em RC
-      const rcProfit  = sRC  - bRC
-      const pixProfit = sPIX - bPIX
-      const parts = []
-      if (bRC > 0 && sRC > 0)
-        parts.push(<span key="rc" className="font-bold" style={{ color: rcProfit >= 0 ? '#fbbf24' : '#f87171' }}>{formatRC(rcProfit)}</span>)
-      if (bPIX > 0 || sPIX > 0)
-        parts.push(<span key="pix" className="font-bold" style={{ color: pixProfit >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(pixProfit)}</span>)
-      if (parts.length) profitDisplay = <>{parts}</>
-    }
+  if (hasBuy && hasSell) {
+    const rate   = rcRate || 0.087
+    const profit = (sPIX + sRC * rate) - (bPIX + bRC * rate)
+    profitDisplay = (
+      <span className="font-bold" style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>
+        {formatCurrency(profit)}
+      </span>
+    )
   }
 
   return (

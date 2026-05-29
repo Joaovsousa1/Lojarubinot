@@ -19,27 +19,21 @@ function PriceCell({ rc, pix }) {
 }
 
 function ProfitCell({ buyPriceRC, buyPricePIX, sellPriceRC, sellPricePIX, rcRate }) {
-  const hasAny = buyPriceRC || buyPricePIX || sellPriceRC || sellPricePIX
-  if (!hasAny) return <span className="text-gray-600">—</span>
+  const hasBuy  = (buyPriceRC  || 0) > 0 || (buyPricePIX  || 0) > 0
+  const hasSell = (sellPriceRC || 0) > 0 || (sellPricePIX || 0) > 0
 
-  // Taxa configurada → converte tudo para R$
-  if (rcRate > 0) {
-    const buyTotal  = (buyPricePIX  || 0) + (buyPriceRC  || 0) * rcRate
-    const sellTotal = (sellPricePIX || 0) + (sellPriceRC || 0) * rcRate
-    const profit = sellTotal - buyTotal
-    return <div className="text-xs font-medium" style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(profit)}</div>
-  }
+  // Só calcula se tiver preço de compra E venda
+  if (!hasBuy || !hasSell) return <span className="text-gray-600">—</span>
 
-  // Sem taxa: RC só aparece se tiver compra E venda em RC
-  const rcProfit  = (sellPriceRC  || 0) - (buyPriceRC  || 0)
-  const pixProfit = (sellPricePIX || 0) - (buyPricePIX || 0)
-  const showRC  = buyPriceRC  > 0 && sellPriceRC  > 0
-  const showPIX = buyPricePIX > 0 || sellPricePIX > 0
-  if (!showRC && !showPIX) return <span className="text-gray-600">—</span>
+  // Sempre converte tudo para R$ usando a taxa (padrão 0.087 se não configurada)
+  const rate     = rcRate || 0.087
+  const buyTotal  = (buyPricePIX  || 0) + (buyPriceRC  || 0) * rate
+  const sellTotal = (sellPricePIX || 0) + (sellPriceRC || 0) * rate
+  const profit    = sellTotal - buyTotal
+
   return (
-    <div className="space-y-0.5">
-      {showRC  && <div className="text-xs font-medium" style={{ color: rcProfit  >= 0 ? '#fbbf24' : '#f87171' }}>{formatRC(rcProfit)}</div>}
-      {showPIX && <div className="text-xs font-medium" style={{ color: pixProfit >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(pixProfit)}</div>}
+    <div className="text-xs font-medium" style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>
+      {formatCurrency(profit)}
     </div>
   )
 }
