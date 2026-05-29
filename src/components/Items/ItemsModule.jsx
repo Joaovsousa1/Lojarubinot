@@ -150,6 +150,7 @@ export default function ItemsModule() {
   const [showForm,    _setShowForm]   = useState(() => sessionStorage.getItem('items_modal') === '1')
   const setShowForm = (v) => { v ? sessionStorage.setItem('items_modal','1') : sessionStorage.removeItem('items_modal'); _setShowForm(v) }
   const [editing,     setEditing]     = useState(null)
+  const [listCopied,  setListCopied]  = useState(false)
   const [selling,     setSelling]     = useState(null)
   const [showHistory, setShowHistory] = useState(null)
   const [filters, setFilters] = useState({ server: '', category: '', tier: '', classification: '', search: '' })
@@ -218,6 +219,16 @@ export default function ItemsModule() {
     addItem({ ...it, quantity: 1, sales: [], priceHistory: [], dateEntry: new Date().toISOString() })
   }
 
+  const handleCopyList = () => {
+    const lines = sorted
+      .map(it => `${it.name} - ${it.server}`)
+      .join('\n')
+    navigator.clipboard.writeText(lines).then(() => {
+      setListCopied(true)
+      setTimeout(() => setListCopied(false), 2500)
+    })
+  }
+
   const SELECT = 'px-3 py-2 rounded-lg text-sm text-white'
   const SELECT_STYLE = { backgroundColor: '#2a2035', border: '1px solid #3a3050' }
 
@@ -248,6 +259,21 @@ export default function ItemsModule() {
               <LayoutGrid size={15} />
             </button>
           </div>
+          {sorted.length > 0 && (
+            <button
+              onClick={handleCopyList}
+              title="Copiar lista de itens"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={{
+                backgroundColor: listCopied ? '#14532d' : '#2a2035',
+                color: listCopied ? '#4ade80' : '#9ca3af',
+                border: `1px solid ${listCopied ? '#16a34a' : '#3a3050'}`,
+              }}
+            >
+              <Copy size={14} />
+              {listCopied ? 'Copiado!' : 'Copiar lista'}
+            </button>
+          )}
           <button onClick={() => setShowForm(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
             style={{ backgroundColor: '#7c3aed' }}
