@@ -12,7 +12,6 @@ export default function Modal({ title, onClose, children, wide = false }) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ backgroundColor: 'rgba(0,0,0,0.7)' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
       <div
         className={`relative flex flex-col rounded-xl shadow-2xl ${wide ? 'w-full max-w-3xl' : 'w-full max-w-lg'}`}
