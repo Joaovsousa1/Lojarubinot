@@ -1,9 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Plus, Trash2, ArrowDownCircle, ArrowUpCircle, Calculator, X } from 'lucide-react'
+import { Trash2, ArrowDownCircle, ArrowUpCircle, Calculator, X } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
-import {
-  formatCurrency, formatNumber, formatDateTime, generateId,
-} from '../../utils/helpers'
+import { formatCurrency, formatNumber, formatDateTime } from '../../utils/helpers'
 
 const INPUT = 'w-full px-3 py-2 rounded-lg text-sm text-white outline-none transition-colors'
 const INPUT_STYLE = { backgroundColor: '#1a1025', border: '1px solid #3a3050' }
@@ -16,13 +14,12 @@ function CoinForm({ type, onClose }) {
     quantity: '',
     packageType: '10k',
     pricePerK: isEntrada ? settings.coinPrices.buy10k : settings.coinPrices.sell,
-    totalValue: '',
-    server: settings.servers[0] ?? '',
+    server: 'Todos',
     observation: '',
   })
 
   const qty = parseFloat(form.quantity) || 0
-  const calculatedTotal = qty * form.pricePerK / 1000
+  const calculatedTotal = qty * parseFloat(form.pricePerK) / 1000
   const profit = isEntrada ? null : calculatedTotal - qty * settings.coinPrices.buy10k / 1000
 
   const handlePackageChange = (pkg) => {
@@ -58,7 +55,7 @@ function CoinForm({ type, onClose }) {
         <div>
           <label className={LABEL}>Quantidade de coins</label>
           <input
-            type="number" min="1" required
+            type="number" min="1" required autoFocus
             className={INPUT} style={INPUT_STYLE}
             value={form.quantity}
             onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
@@ -102,6 +99,7 @@ function CoinForm({ type, onClose }) {
             value={form.server}
             onChange={e => setForm(f => ({ ...f, server: e.target.value }))}
           >
+            <option value="Todos">Todos</option>
             {settings.servers.map(s => <option key={s}>{s}</option>)}
           </select>
         </div>
@@ -124,7 +122,7 @@ function CoinForm({ type, onClose }) {
             <span className="text-gray-400">{isEntrada ? 'Custo total' : 'Receita'}</span>
             <span className="text-white font-semibold">{formatCurrency(calculatedTotal)}</span>
           </div>
-          {!isEntrada && (
+          {!isEntrada && profit !== null && (
             <div className="flex justify-between text-sm">
               <span className="text-gray-400">Lucro estimado</span>
               <span style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }} className="font-semibold">
@@ -146,6 +144,48 @@ function CoinForm({ type, onClose }) {
         >Registrar</button>
       </div>
     </form>
+  )
+}
+
+function CoinModal({ type, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const isEntrada = type === 'entrada'
+  const accent    = isEntrada ? '#16a34a' : '#dc2626'
+  const accentBg  = isEntrada ? '#14532d' : '#7f1d1d'
+  const accentText = isEntrada ? '#4ade80' : '#f87171'
+  const title     = isEntrada ? '⬇ Registrar Entrada' : '⬆ Registrar Saída'
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16, backgroundColor: 'rgba(0,0,0,0.75)',
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{
+        width: '100%', maxWidth: 460,
+        backgroundColor: '#1c1530',
+        border: `1px solid ${accent}`,
+        borderRadius: 20,
+        padding: 24,
+        boxShadow: `0 0 60px ${accentBg}`,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <span style={{ fontWeight: 700, fontSize: 15, color: accentText }}>{title}</span>
+          <button onClick={onClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, lineHeight: 1 }}
+          ><X size={18} /></button>
+        </div>
+        <CoinForm type={type} onClose={onClose} />
+      </div>
+    </div>
   )
 }
 
@@ -201,41 +241,6 @@ function CoinCalculator() {
   )
 }
 
-function CoinModal({ type, onClose }) {
-  useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-
-  const isEntrada = type === 'entrada'
-  const title = isEntrada ? '⬇ Registrar Entrada' : '⬆ Registrar Saída'
-  const accent = isEntrada ? '#16a34a' : '#dc2626'
-  const accentBg = isEntrada ? '#14532d' : '#7f1d1d'
-  const accentText = isEntrada ? '#4ade80' : '#f87171'
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl p-6 space-y-5"
-        style={{ backgroundColor: '#1c1530', border: `1px solid ${accent}`, boxShadow: `0 0 40px ${accentBg}88` }}
-      >
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold" style={{ color: accentText }}>{title}</h2>
-          <button onClick={onClose} className="p-1 rounded-lg transition-colors text-gray-500 hover:text-white">
-            <X size={18} />
-          </button>
-        </div>
-        <CoinForm type={type} onClose={onClose} />
-      </div>
-    </div>
-  )
-}
-
 export default function CoinsModule() {
   const { coins, deleteCoinTransaction, settings } = useApp()
   const [tab, setTab] = useState('historico')
@@ -257,17 +262,18 @@ export default function CoinsModule() {
   const balances = useMemo(() => {
     const map = {}
     coins.forEach(c => {
-      if (!map[c.server]) map[c.server] = 0
-      if (c.type === 'entrada') map[c.server] += c.quantity
-      else map[c.server] -= c.quantity
+      const key = c.server || 'Todos'
+      if (!map[key]) map[key] = 0
+      if (c.type === 'entrada') map[key] += c.quantity
+      else map[key] -= c.quantity
     })
     return map
   }, [coins])
 
   const TABS = [
-    { id: 'historico',  label: 'Histórico' },
-    { id: 'registrar',  label: 'Registrar' },
-    { id: 'calculadora',label: 'Calculadora' },
+    { id: 'historico',   label: 'Histórico' },
+    { id: 'registrar',   label: 'Registrar' },
+    { id: 'calculadora', label: 'Calculadora' },
   ]
 
   return (
@@ -314,7 +320,6 @@ export default function CoinsModule() {
 
       {tab === 'historico' && (
         <div className="space-y-4">
-          {/* Filters */}
           <div className="flex flex-wrap gap-3">
             <select
               className="px-3 py-2 rounded-lg text-sm text-white"
@@ -336,7 +341,6 @@ export default function CoinsModule() {
             />
           </div>
 
-          {/* Table */}
           <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #3a3050' }}>
             <table className="w-full text-sm">
               <thead>
@@ -412,7 +416,7 @@ export default function CoinsModule() {
         </div>
       )}
 
-      {modalType && <CoinModal type={modalType} onClose={() => setModalType(null)} />}
+      {modalType && <CoinModal key={modalType} type={modalType} onClose={() => setModalType(null)} />}
     </div>
   )
 }
