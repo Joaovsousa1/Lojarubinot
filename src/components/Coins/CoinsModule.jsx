@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Trash2, ArrowDownCircle, ArrowUpCircle, Calculator, X } from 'lucide-react'
+import { Trash2, ArrowDownCircle, ArrowUpCircle, Calculator, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, formatDateTime } from '../../utils/helpers'
 
@@ -248,6 +248,7 @@ export default function CoinsModule() {
   const [filterServer, setFilterServer] = useState('')
   const [filterFrom, setFilterFrom] = useState('')
   const [filterTo, setFilterTo] = useState('')
+  const [expandedId, setExpandedId] = useState(null)
 
   const filtered = useMemo(() => {
     return coins.filter(c => {
@@ -340,77 +341,89 @@ export default function CoinsModule() {
             />
           </div>
 
-          <div className="space-y-3">
-            {filtered.length === 0 && (
-              <div className="text-center text-gray-500 py-10">Sem transações registradas.</div>
-            )}
-            {filtered.map(c => {
-              const isEntrada = c.type === 'entrada'
-              const accentColor = isEntrada ? '#16a34a' : '#dc2626'
-              const accentText  = isEntrada ? '#4ade80' : '#f87171'
-              const totalLabel  = isEntrada ? 'Total Pago' : 'Receita'
-              const totalValue  = isEntrada ? c.totalPaid : c.totalReceived
-              return (
-                <div key={c.id} style={{
-                  backgroundColor: '#1a1025',
-                  border: `1px solid ${isEntrada ? '#1a3a22' : '#3a1a1a'}`,
-                  borderLeft: `4px solid ${accentColor}`,
-                  borderRadius: 12,
-                  padding: '14px 16px',
-                }}>
-                  {/* Cabeçalho */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 5, color: accentText, fontWeight: 700, fontSize: 13 }}>
-                        {isEntrada ? <ArrowDownCircle size={14} /> : <ArrowUpCircle size={14} />}
-                        {isEntrada ? 'Entrada' : 'Saída'}
-                      </span>
-                      {c.packageType && (
-                        <span style={{ backgroundColor: '#3b0764', color: '#c084fc', border: '1px solid #6d28d9', borderRadius: 5, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>
-                          {c.packageType}
-                        </span>
+          <div style={{ border: '1px solid #3a3050', borderRadius: 12, overflowX: 'auto' }}>
+            <table className="text-sm" style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#1a1025' }}>
+                  {['Tipo', 'Data', 'Quantidade', 'Pacote', 'Preço/k', 'Total', 'Servidor', 'Lucro', ''].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs text-gray-400 font-medium whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && (
+                  <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-500">Sem transações.</td></tr>
+                )}
+                {filtered.map(c => {
+                  const isExpanded = expandedId === c.id
+                  return (
+                    <React.Fragment key={c.id}>
+                      <tr className="border-t" style={{ borderColor: '#3a3050' }}>
+                        <td className="px-4 py-3">
+                          {c.type === 'entrada'
+                            ? <span className="flex items-center gap-1 text-green-400 font-medium"><ArrowDownCircle size={13} /> Entrada</span>
+                            : <span className="flex items-center gap-1 text-red-400 font-medium"><ArrowUpCircle size={13} /> Saída</span>
+                          }
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{formatDateTime(c.date)}</td>
+                        <td className="px-4 py-3 text-white font-medium">{formatNumber(c.quantity)}</td>
+                        <td className="px-4 py-3">
+                          {c.packageType
+                            ? <span className="px-2 py-0.5 rounded text-xs font-bold"
+                                style={{ backgroundColor: '#3b0764', color: '#c084fc', border: '1px solid #6d28d9' }}>
+                                {c.packageType}
+                              </span>
+                            : <span className="text-gray-600 text-xs">—</span>
+                          }
+                        </td>
+                        <td className="px-4 py-3 text-gray-400">{formatCurrency(c.pricePerK)}</td>
+                        <td className="px-4 py-3 text-white">
+                          {c.type === 'entrada' ? formatCurrency(c.totalPaid) : formatCurrency(c.totalReceived)}
+                        </td>
+                        <td className="px-4 py-3 text-gray-400">{c.server}</td>
+                        <td className="px-4 py-3">
+                          {c.type === 'saida'
+                            ? <span style={{ color: '#4ade80' }}>{formatCurrency(c.profit)}</span>
+                            : <span className="text-gray-600">—</span>
+                          }
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1">
+                            {c.observation && (
+                              <button
+                                onClick={() => setExpandedId(isExpanded ? null : c.id)}
+                                title={isExpanded ? 'Fechar' : 'Ver descrição'}
+                                className="p-1 rounded transition-colors"
+                                style={{
+                                  background: 'none', border: 'none', cursor: 'pointer',
+                                  color: isExpanded ? '#c084fc' : '#6b7280',
+                                  backgroundColor: isExpanded ? '#3b0764' : 'transparent',
+                                }}
+                              >
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                              </button>
+                            )}
+                            <button onClick={() => deleteCoinTransaction(c.id)}
+                              className="p-1 rounded hover:bg-red-900/50 text-gray-500 hover:text-red-400 transition-colors"
+                              style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {isExpanded && c.observation && (
+                        <tr style={{ backgroundColor: '#1e1530' }}>
+                          <td colSpan={9} style={{ padding: '10px 16px', borderTop: '1px solid #3b0764' }}>
+                            <span style={{ fontSize: 12, color: '#9ca3af', marginRight: 6 }}>💬 Descrição:</span>
+                            <span style={{ fontSize: 13, color: '#e5e7eb' }}>{c.observation}</span>
+                          </td>
+                        </tr>
                       )}
-                      {c.server && (
-                        <span style={{ color: '#6b7280', fontSize: 12 }}>• {c.server}</span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ color: '#6b7280', fontSize: 11 }}>{formatDateTime(c.date)}</span>
-                      <button
-                        onClick={() => deleteCoinTransaction(c.id)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, borderRadius: 6, lineHeight: 1 }}
-                        onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.backgroundColor = 'rgba(127,29,29,0.4)' }}
-                        onMouseLeave={e => { e.currentTarget.style.color = '#6b7280'; e.currentTarget.style.backgroundColor = 'transparent' }}
-                      ><Trash2 size={13} /></button>
-                    </div>
-                  </div>
-
-                  {/* Observação */}
-                  {c.observation ? (
-                    <div style={{ backgroundColor: '#2a2035', borderRadius: 7, padding: '7px 10px', marginBottom: 12, fontSize: 13, color: '#d1d5db' }}>
-                      💬 {c.observation}
-                    </div>
-                  ) : null}
-
-                  {/* Métricas */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: 8 }}>
-                    {[
-                      { label: 'Quantidade', value: formatNumber(c.quantity), color: '#fff' },
-                      { label: 'Preço / 1k', value: formatCurrency(c.pricePerK), color: '#e5e7eb' },
-                      { label: totalLabel, value: formatCurrency(totalValue), color: isEntrada ? '#f87171' : '#60a5fa' },
-                      ...(!isEntrada && c.profit != null
-                        ? [{ label: 'Lucro', value: formatCurrency(c.profit), color: c.profit >= 0 ? '#4ade80' : '#f87171' }]
-                        : []),
-                    ].map(m => (
-                      <div key={m.label} style={{ backgroundColor: '#2a2035', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
-                        <div style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 3 }}>{m.label}</div>
-                        <div style={{ fontSize: 14, fontWeight: 700, color: m.color }}>{m.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
+                    </React.Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
