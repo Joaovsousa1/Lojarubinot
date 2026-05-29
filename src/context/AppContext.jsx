@@ -64,7 +64,7 @@ export function AppProvider({ children }) {
 
     // Só atualiza o estado se não houve erro — evita apagar dados ao falhar
     if (ce) { addToast('Erro ao carregar coins. Tente recarregar.'); console.error('[loadData] coins:', ce.message) }
-    else setCoins(c ?? [])
+    else setCoins((c ?? []).map(dbToCoin))
 
     if (ie) { addToast('Erro ao carregar itens. Tente recarregar.'); console.error('[loadData] items:', ie.message) }
     else setItems((it ?? []).map(dbToItem))
@@ -131,6 +131,31 @@ export function AppProvider({ children }) {
     }
   }
 
+  function dbToCoin(row) {
+    return {
+      id: row.id, type: row.type, date: row.date, quantity: row.quantity,
+      server: row.server, observation: row.observation,
+      packageType: row.package_type,
+      pricePerK: row.price_per_k,
+      totalPaid: row.total_paid,
+      totalReceived: row.total_received,
+      profit: row.profit, user_id: row.user_id,
+    }
+  }
+
+  function coinToDb(coin) {
+    return {
+      id: coin.id, user_id: coin.user_id ?? user?.id,
+      type: coin.type, date: coin.date, quantity: coin.quantity,
+      server: coin.server, observation: coin.observation,
+      package_type: coin.packageType,
+      price_per_k: coin.pricePerK,
+      total_paid: coin.totalPaid,
+      total_received: coin.totalReceived,
+      profit: coin.profit,
+    }
+  }
+
   function accountToDb(acc) {
     return {
       id: acc.id ?? generateId(),
@@ -151,7 +176,7 @@ export function AppProvider({ children }) {
     const id = generateId()
     const row = { ...tx, id, user_id: user.id }
     setCoins(prev => [row, ...prev])
-    const { error } = await supabase.from('coins').insert(row)
+    const { error } = await supabase.from('coins').insert(coinToDb(row))
     if (error) {
       setCoins(prev => prev.filter(c => c.id !== row.id))
       addToast(`Erro ao salvar transação: ${error.message}`)
@@ -336,8 +361,8 @@ export function AppProvider({ children }) {
       if (d.coins !== undefined) {
         const { error } = await supabase.from('coins').delete().eq('user_id', user.id)
         if (error) throw new Error(`Erro ao limpar coins: ${error.message}`)
-        if (d.coins.length) await supabase.from('coins').insert(d.coins.map(c => ({ ...c, user_id: user.id })))
-        setCoins(d.coins)
+        if (d.coins.length) await supabase.from('coins').insert(d.coins.map(c => coinToDb({ ...c, user_id: user.id })))
+        setCoins(d.coins.map(c => dbToCoin(coinToDb({ ...c, user_id: user.id }))))
       }
       if (d.items !== undefined) {
         const { error } = await supabase.from('items').delete().eq('user_id', user.id)
