@@ -168,6 +168,19 @@ export const ITEMS_DATABASE = [
   item('The Devileye',     'The_Devileye',     3, 'acessório','Outros'),
   item('Deepling Staff',   'Deepling_Staff',   3, 'arma',     'Outros'),
 
+  // ── STAG SET (Class 4) ────────────────────────────────────────────────────
+  item('Stag Helmet',       'Stag_Helmet',       4, 'armadura', 'Stag'),
+  item('Stag Robe',         'Stag_Robe',         4, 'armadura', 'Stag'),
+  item('Stag Plate',        'Stag_Plate',        4, 'armadura', 'Stag'),
+  item('Stag Legs',         'Stag_Legs',         4, 'armadura', 'Stag'),
+  item('Stag Shinguards',   'Stag_Shinguards',   4, 'armadura', 'Stag'),
+  item('Stag Boots',        'Stag_Boots',        4, 'armadura', 'Stag'),
+  item('Stag Footwraps',    'Stag_Footwraps',    4, 'armadura', 'Stag'),
+  item('Stag Shield',       'Stag_Shield',       4, 'armadura', 'Stag'),
+  item('Refined Stag Shield','Refined_Stag_Shield',4,'armadura','Stag'),
+  item('Stag Scrolls',      'Stag_Scrolls',      4, 'misc',     'Stag'),
+  item('Stag Spellbook',    'Stag_Spellbook',    4, 'misc',     'Stag'),
+
   // ── PRIMAL SET / ALICORN (Class 4) ────────────────────────────────────────
   item('Alicorn Headguard',                'Alicorn_Headguard',                4, 'armadura', 'Primal'),
   item('Primal Robe of the Vizier',        'Primal_Robe_of_the_Vizier',        4, 'armadura', 'Primal'),
