@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Info } from 'lucide-react'
 import { searchOutfits, OUTFITS_DATABASE } from '../../data/outfitsDatabase'
 import { searchMounts, MOUNTS_DATABASE } from '../../data/mountsDatabase'
 
@@ -12,6 +12,15 @@ const INPUT = 'w-full px-3 py-2 rounded-lg text-sm text-white outline-none'
 const INPUT_STYLE = { backgroundColor: '#1a1025', border: '1px solid #3a3050' }
 const LABEL = 'block text-xs text-gray-400 mb-1'
 const NUM_SMALL = 'w-full px-2 py-1.5 rounded-lg text-sm text-white text-center outline-none'
+
+function Hint({ children }) {
+  return (
+    <p style={{ fontSize: 11, color: '#6b7280', marginTop: 6, display: 'flex', alignItems: 'flex-start', gap: 5, lineHeight: 1.5 }}>
+      <Info size={11} style={{ flexShrink: 0, marginTop: 1, color: '#4b5563' }} />
+      <span>{children}</span>
+    </p>
+  )
+}
 
 const VOCATIONS = ['Knight', 'Paladin', 'Sorcerer', 'Monk']
 const STATUSES  = ['disponível', 'reservada', 'em negociação', 'vendida']
@@ -332,6 +341,7 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
             </div>
           ))}
         </div>
+        <Hint>Preencha apenas as skills relevantes da vocação. ML para mago/druida, Dist para paladino, Sword/Axe/Club para knight. Aparecem no anúncio como "✨ Magic Level X + Y Loyalty".</Hint>
       </div>
 
       {/* Progressão */}
@@ -352,6 +362,7 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
             </div>
           ))}
         </div>
+        <Hint>VIP Days e Loyalty Skill aparecem no cabeçalho do anúncio (⏳ X dias de VIP). Charm, Bosstiary e Task Points aparecem no final do post.</Hint>
       </div>
 
       {/* Cosmetics */}
@@ -362,17 +373,24 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
         <TagInput label="Addons" items={form.addons} onChange={v => set('addons', v)} />
         <AutocompleteTagInput label="Montarias" items={form.mounts} onChange={v => set('mounts', v)}
           searchFn={searchMounts} urlMap={MOUNT_URL} chipColor="#1e3a5f" chipBorder="#1e40af" />
+        <Hint>Outfits e montarias aparecem no anúncio como "👕 Outfits (X): ..." e "🐴 Montarias (X): ...". Digite o nome e selecione da lista ou pressione + para adicionar.</Hint>
       </div>
 
       {/* Notable items */}
-      <TagInput label="Itens notáveis" items={form.notableItems} onChange={v => set('notableItems', v)} />
+      <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050' }}>
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Set e Itens Notáveis</div>
+        <TagInput label="" items={form.notableItems} onChange={v => set('notableItems', v)} />
+        <Hint>Aparecem no anúncio como "🎒 Set e itens que acompanham a ACC". Adicione o equipamento principal, ex: "Set Sanguine t3", "Coil t4", "Folio", "Arcano Ring", "Theurgic Amulet".</Hint>
+      </div>
 
-      {/* Notes */}
-      <div>
-        <label className={LABEL}>Notas internas</label>
-        <textarea rows={2} className={INPUT} style={INPUT_STYLE}
+      {/* Notes / Diferenciais */}
+      <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050' }}>
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Diferenciais do char</div>
+        <textarea rows={6} className={INPUT} style={{ ...INPUT_STYLE, resize: 'vertical' }}
           value={form.notes} onChange={e => set('notes', e.target.value)}
-          placeholder="Observações sobre a conta" />
+          placeholder={`Escreva um diferencial por linha, ex:\n🧿 3ª Prey desbloqueada + 65 Cards de Prey\n📜 Scrolls de 3, 13 e 20 usados\n🎯 1440 Pts de Bounty disponíveis\n🎟️ Battle Pass 3 completo (Astral)\n🔆 Gems meta desbloqueadas (UE Nv.4, Physical Nv.3)\n⚔️ 210 Boss Points\n🚀 Quests disponíveis: Soulwar, Primal`}
+        />
+        <Hint>Esta seção aparece como "🌟 Diferenciais do char:" no anúncio. Cada linha vira uma linha no post. Pode usar emojis — copie do anúncio ou escreva direto aqui.</Hint>
       </div>
 
       {/* Screenshot */}
