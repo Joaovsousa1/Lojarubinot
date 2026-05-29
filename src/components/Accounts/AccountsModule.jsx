@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
-import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X, DollarSign } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, formatDate, VOCATION_COLORS, VOCATION_OUTFIT, VOCATION_BG, STATUS_COLORS } from '../../utils/helpers'
 import { OUTFITS_DATABASE } from '../../data/outfitsDatabase'
@@ -274,7 +274,93 @@ function SalesTextModal({ acc, onClose }) {
   )
 }
 
-function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce }) {
+function SellModal({ acc, onClose, onConfirm }) {
+  const [price, setPrice] = useState(acc.sellPrice > 0 ? String(acc.sellPrice) : '')
+
+  useEffect(() => {
+    const fn = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [onClose])
+
+  const handleConfirm = () => {
+    const val = parseFloat(price)
+    if (!val || val <= 0) return
+    onConfirm(val)
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16, backgroundColor: 'rgba(0,0,0,0.75)',
+    }}>
+      <div style={{
+        width: '100%', maxWidth: 380,
+        backgroundColor: '#1c1530',
+        border: '1px solid #16a34a',
+        borderRadius: 20, padding: 28,
+        boxShadow: '0 0 60px #14532d88',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <span style={{ fontWeight: 700, fontSize: 15, color: '#4ade80' }}>
+            ✅ Marcar como vendida
+          </span>
+          <button onClick={onClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4 }}
+          ><X size={18} /></button>
+        </div>
+
+        <div style={{ marginBottom: 6, fontSize: 13, color: '#9ca3af' }}>
+          {acc.charName || `${acc.vocation} Lv${acc.level}`}
+        </div>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: 'block', fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>
+            Preço final de venda (R$)
+          </label>
+          <input
+            type="number" step="0.01" min="0" autoFocus
+            value={price}
+            onChange={e => setPrice(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleConfirm()}
+            placeholder="Ex: 2500.00"
+            style={{
+              width: '100%', padding: '11px 14px', borderRadius: 10,
+              backgroundColor: '#0e0919', border: '1px solid #3a3050',
+              color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box',
+            }}
+          />
+          {acc.buyPrice > 0 && parseFloat(price) > 0 && (
+            <div style={{ marginTop: 8, fontSize: 13, color: parseFloat(price) >= acc.buyPrice ? '#4ade80' : '#f87171' }}>
+              Lucro: R$ {(parseFloat(price) - acc.buyPrice).toFixed(2)}
+            </div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={handleConfirm}
+            disabled={!parseFloat(price)}
+            style={{
+              flex: 1, padding: '11px 0', borderRadius: 10, border: 'none',
+              backgroundColor: parseFloat(price) > 0 ? '#16a34a' : '#1a1025',
+              color: parseFloat(price) > 0 ? '#fff' : '#4b5563',
+              fontWeight: 700, fontSize: 14, cursor: parseFloat(price) > 0 ? 'pointer' : 'not-allowed',
+            }}
+          >Confirmar venda</button>
+          <button onClick={onClose}
+            style={{
+              padding: '11px 18px', borderRadius: 10, fontSize: 14, cursor: 'pointer',
+              backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#9ca3af',
+            }}
+          >Cancelar</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) {
   const [outfitIdx, setOutfitIdx] = useState(0)
   const [pickerOpen, setPickerOpen] = useState(false)
   const profit = acc.sellPrice - acc.buyPrice
@@ -517,21 +603,35 @@ function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce }) {
             className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{ backgroundColor: '#3b0764', border: '1px solid #6d28d9', color: '#c084fc' }}
           ><Pencil size={12} /> Editar</button>
+          {acc.status !== 'vendida' && (
+            <div style={{ position: 'relative' }} className="group">
+              <button onClick={onSell}
+                className="py-1.5 px-3 rounded-lg text-xs transition-colors"
+                style={{ backgroundColor: '#14532d', border: '1px solid #16a34a', color: '#4ade80' }}
+              ><DollarSign size={13} /></button>
+              <div className="group-hover:flex hidden" style={{
+                position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)',
+                backgroundColor: '#14532d', border: '1px solid #16a34a', color: '#4ade80',
+                fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap',
+                padding: '3px 8px', borderRadius: 6, pointerEvents: 'none', zIndex: 50,
+              }}>Marcar como vendida</div>
+            </div>
+          )}
           <div style={{ position: 'relative' }} className="group">
             <button onClick={onAnnounce}
               className="py-1.5 px-3 rounded-lg text-xs transition-colors"
-              style={{ backgroundColor: '#14532d', border: '1px solid #16a34a', color: '#4ade80' }}
+              style={{ backgroundColor: '#1e3a5f', border: '1px solid #1e40af', color: '#60a5fa' }}
             ><Megaphone size={13} /></button>
             <div className="group-hover:flex hidden" style={{
               position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)',
-              backgroundColor: '#14532d', border: '1px solid #16a34a', color: '#4ade80',
+              backgroundColor: '#1e3a5f', border: '1px solid #1e40af', color: '#60a5fa',
               fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap',
               padding: '3px 8px', borderRadius: 6, pointerEvents: 'none', zIndex: 50,
             }}>Faça seu anúncio</div>
           </div>
           <button onClick={onClone} title="Duplicar conta"
             className="py-1.5 px-3 rounded-lg text-xs transition-colors"
-            style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#60a5fa' }}
+            style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#9ca3af' }}
           ><Copy size={12} /></button>
           <button onClick={onDelete}
             className="py-1.5 px-3 rounded-lg text-xs transition-colors"
@@ -557,6 +657,7 @@ export default function AccountsModule() {
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [announcing, setAnnouncing] = useState(null)
+  const [selling, setSelling] = useState(null)
   const [filters, setFilters] = useState({ vocation: '', server: '', status: '' })
   const [search, setSearch] = useState('')
   const [sortVal, setSortVal] = useState('level-desc')
@@ -664,6 +765,7 @@ export default function AccountsModule() {
               onEdit={() => setEditing(acc)}
               onClone={() => handleClone(acc)}
               onAnnounce={() => setAnnouncing(acc)}
+              onSell={() => setSelling(acc)}
               onDelete={() => { if (confirm(`Excluir conta ${acc.charName || acc.vocation + ' Lv' + acc.level}?`)) deleteAccount(acc.id) }}
             />
           ))}
@@ -693,6 +795,21 @@ export default function AccountsModule() {
 
       {announcing && (
         <SalesTextModal acc={announcing} onClose={() => setAnnouncing(null)} />
+      )}
+
+      {selling && (
+        <SellModal
+          acc={selling}
+          onClose={() => setSelling(null)}
+          onConfirm={(price) => {
+            updateAccount(selling.id, {
+              status: 'vendida',
+              sellPrice: price,
+              dateSold: new Date().toISOString(),
+            })
+            setSelling(null)
+          }}
+        />
       )}
     </div>
   )

@@ -331,9 +331,10 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
               value={form.buyPrice} onChange={e => set('buyPrice', e.target.value)} />
           </div>
           <div>
-            <label className={LABEL}>Preço venda (R$)</label>
-            <input type="number" step="0.01" min="0" required className={INPUT} style={INPUT_STYLE}
-              value={form.sellPrice} onChange={e => set('sellPrice', e.target.value)} />
+            <label className={LABEL}>Preço venda (R$) <span style={{ color: '#4b5563', fontWeight: 400 }}>— opcional</span></label>
+            <input type="number" step="0.01" min="0" className={INPUT} style={INPUT_STYLE}
+              value={form.sellPrice} onChange={e => set('sellPrice', e.target.value)}
+              placeholder="Definir depois" />
           </div>
         </div>
         {form.buyPrice && form.sellPrice && (
