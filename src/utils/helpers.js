@@ -11,7 +11,9 @@ export const formatDateTime = (d) =>
   d ? new Date(d).toLocaleString('pt-BR') : '—'
 
 export const generateId = () =>
-  `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
 export const getCurrentMonth = () => {
   const now = new Date()

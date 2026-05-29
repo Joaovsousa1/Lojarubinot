@@ -103,7 +103,8 @@ export function AppProvider({ children }) {
 
   function itemToDb(item) {
     return {
-      user_id: user.id, name: item.name, set: item.set, image_url: item.imageUrl,
+      id: item.id ?? generateId(),
+      user_id: user?.id, name: item.name, set: item.set, image_url: item.imageUrl,
       classification: item.classification, tier: item.tier, max_tier: item.maxTier,
       server: item.server, category: item.category, quantity: item.quantity,
       buy_price_rc: item.buyPriceRC, buy_price_pix: item.buyPricePIX,
@@ -129,7 +130,8 @@ export function AppProvider({ children }) {
 
   function accountToDb(acc) {
     return {
-      user_id: user.id, server: acc.server, vocation: acc.vocation, level: acc.level,
+      id: acc.id ?? generateId(),
+      user_id: user?.id, server: acc.server, vocation: acc.vocation, level: acc.level,
       char_name: acc.charName, buy_price: acc.buyPrice, sell_price: acc.sellPrice,
       status: acc.status, date_entry: acc.dateEntry, date_sold: acc.dateSold,
       skills: acc.skills ?? {}, charm_points: acc.charmPoints,
@@ -143,7 +145,8 @@ export function AppProvider({ children }) {
 
   // ── Coins ──────────────────────────────────────────────────────────────────
   const addCoinTransaction = async (tx) => {
-    const row = { ...tx, id: generateId(), user_id: user.id }
+    const id = generateId()
+    const row = { ...tx, id, user_id: user.id }
     setCoins(prev => [row, ...prev])
     const { error } = await supabase.from('coins').insert(row)
     if (error) {
@@ -166,15 +169,18 @@ export function AppProvider({ children }) {
 
   // ── Items ──────────────────────────────────────────────────────────────────
   const addItem = async (item) => {
+    const id = generateId()
     const newItem = {
       ...item,
-      id: generateId(),
+      id,
       sales: [],
       priceHistory: [],
       dateEntry: item.dateEntry ?? new Date().toISOString(),
     }
     setItems(prev => [newItem, ...prev])
-    const { error } = await supabase.from('items').insert(itemToDb(newItem))
+    const row = itemToDb(newItem)
+    if (!row.id) { addToast('Erro interno: ID do item não gerado'); return }
+    const { error } = await supabase.from('items').insert(row)
     if (error) {
       setItems(prev => prev.filter(it => it.id !== newItem.id))
       addToast(`Erro ao salvar item "${newItem.name}": ${error.message}`)
@@ -242,7 +248,8 @@ export function AppProvider({ children }) {
 
   // ── Accounts ───────────────────────────────────────────────────────────────
   const addAccount = async (acc) => {
-    const newAcc = { ...acc, id: generateId(), dateEntry: acc.dateEntry ?? new Date().toISOString() }
+    const id = generateId()
+    const newAcc = { ...acc, id, dateEntry: acc.dateEntry ?? new Date().toISOString() }
     setAccounts(prev => [newAcc, ...prev])
     const { error } = await supabase.from('accounts').insert(accountToDb(newAcc))
     if (error) {
