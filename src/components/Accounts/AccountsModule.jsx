@@ -198,7 +198,7 @@ function SalesTextModal({ acc, onClose }) {
       padding: 16, backgroundColor: 'rgba(0,0,0,0.75)',
     }}>
       <div style={{
-        width: '100%', maxWidth: 560, maxHeight: '92vh',
+        width: '100%', maxWidth: 720, height: '90vh',
         backgroundColor: '#1c1530',
         border: '1px solid #7c3aed',
         borderRadius: 20,
@@ -236,11 +236,11 @@ function SalesTextModal({ acc, onClose }) {
           value={text}
           onChange={e => setText(e.target.value)}
           style={{
-            flex: 1, resize: 'none', padding: '16px 20px',
+            flex: 1, resize: 'none', padding: '20px 24px',
             backgroundColor: '#0e0919', color: '#e5e7eb',
-            fontSize: 13, lineHeight: 1.75, fontFamily: 'monospace',
+            fontSize: 14, lineHeight: 1.85, fontFamily: 'monospace',
             border: 'none', outline: 'none', overflowY: 'auto',
-            minHeight: 180,
+            minHeight: 0,
           }}
         />
 
