@@ -220,7 +220,9 @@ export default function ItemsModule() {
   }
 
   const handleCopyList = () => {
-    const lines = sorted
+    const lines = items
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
       .map(it => `${it.name} - ${it.server}`)
       .join('\n')
     navigator.clipboard.writeText(lines).then(() => {
@@ -259,19 +261,19 @@ export default function ItemsModule() {
               <LayoutGrid size={15} />
             </button>
           </div>
-          {sorted.length > 0 && (
+          {items.length > 0 && (
             <button
               onClick={handleCopyList}
-              title="Copiar lista de itens"
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              title="Copiar todos os itens (nome + servidor)"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold"
               style={{
-                backgroundColor: listCopied ? '#14532d' : '#2a2035',
-                color: listCopied ? '#4ade80' : '#9ca3af',
-                border: `1px solid ${listCopied ? '#16a34a' : '#3a3050'}`,
+                backgroundColor: listCopied ? '#14532d' : '#0c4a6e',
+                color: listCopied ? '#4ade80' : '#7dd3fc',
+                border: `1px solid ${listCopied ? '#16a34a' : '#0284c7'}`,
               }}
             >
               <Copy size={14} />
-              {listCopied ? 'Copiado!' : 'Copiar lista'}
+              {listCopied ? '✓ Copiado!' : '📋 Copiar lista'}
             </button>
           )}
           <button onClick={() => setShowForm(true)}
