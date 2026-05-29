@@ -14,6 +14,7 @@ const DEFAULT_SETTINGS = {
   ],
   coinPrices: { buy1k: 87, buy10k: 87, sell: 92 },
   minCoinBalance: 10000,
+  rcRate: 0.087,   // R$ por 1 RC — padrão: 1000 RC = R$ 87
 }
 
 export function AppProvider({ children }) {
@@ -75,6 +76,8 @@ export function AppProvider({ children }) {
     if (saved.coinPrices.buy10k < 5) {
       saved = { ...saved, coinPrices: DEFAULT_SETTINGS.coinPrices }
     }
+    // Se rcRate não foi configurado (0 ou ausente), usa o padrão 1000 RC = R$87
+    if (!saved.rcRate) saved = { ...saved, rcRate: 0.087 }
     setSettings(saved)
     setDataLoaded(true)
   }, [addToast])

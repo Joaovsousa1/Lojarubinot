@@ -96,6 +96,10 @@ export const buildImageUrl = (name) => {
 export const formatRC = (v) =>
   `${new Intl.NumberFormat('pt-BR').format(Math.round(v ?? 0))} RC`
 
+// Lucro real de uma venda: converte RC para R$ usando a taxa e soma ao PIX
+export const realSaleProfit = (sale, rcRate = 0.087) =>
+  (sale.profitPIX || 0) + (sale.profitRC || 0) * rcRate
+
 export const SET_COLORS = {
   'Sanguine':       { primary: '#dc2626', secondary: '#7f1d1d', accent: '#fca5a5', glow: '#dc262644' },
   'Grand Sanguine': { primary: '#b91c1c', secondary: '#7f1d1d', accent: '#fca5a5', glow: '#b91c1c44' },

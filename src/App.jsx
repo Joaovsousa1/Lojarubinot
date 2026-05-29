@@ -79,6 +79,7 @@ function AppShell() {
             style={{ color: '#9461f7', textDecoration: 'underline' }}>
             Sugestões ou melhorias? Clique aqui
           </a>
+          {' · '}<span style={{ color: '#3a3050' }}>v3</span>
         </footer>
       </div>
       <ToastContainer />

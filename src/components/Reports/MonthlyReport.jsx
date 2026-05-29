@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { useApp } from '../../context/AppContext'
 import {
-  formatCurrency, formatRC, formatNumber, formatDate, getLastNMonths,
+  formatCurrency, formatRC, formatNumber, formatDate, getLastNMonths, realSaleProfit,
 } from '../../utils/helpers'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -92,7 +92,8 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function MonthlyReport() {
-  const { coins, items, accounts } = useApp()
+  const { coins, items, accounts, settings } = useApp()
+  const rate = settings?.rcRate || 0.087
   const months = getLastNMonths(12)
   const [selectedMonth, setSelectedMonth] = useState(months[months.length - 1].key)
 
@@ -122,8 +123,8 @@ export default function MonthlyReport() {
     const totalQty     = sales.reduce((s, sale) => s + (sale.quantity  || 1), 0)
     const totalRC      = sales.reduce((s, sale) => s + (sale.soldForRC  || 0), 0)
     const totalPIX     = sales.reduce((s, sale) => s + (sale.soldForPIX || 0), 0)
-    const profitRC     = sales.reduce((s, sale) => s + (sale.profitRC   || 0), 0)
-    const profitPIX    = sales.reduce((s, sale) => s + (sale.profitPIX  || 0), 0)
+    const profitRC  = 0
+    const profitPIX = sales.reduce((s, sale) => s + realSaleProfit(sale, rate), 0)
     // group by item name
     const byItem = {}
     sales.forEach(s => {
@@ -132,12 +133,11 @@ export default function MonthlyReport() {
       byItem[k].qty      += s.quantity || 1
       byItem[k].rcTotal  += s.soldForRC  || 0
       byItem[k].pixTotal += s.soldForPIX || 0
-      byItem[k].profitRC += s.profitRC   || 0
-      byItem[k].profitPIX+= s.profitPIX  || 0
+      byItem[k].profitPIX+= realSaleProfit(s, rate)
     })
-    const topItems = Object.values(byItem).sort((a, b) => (b.profitPIX || b.profitRC) - (a.profitPIX || a.profitRC)).slice(0, 10)
+    const topItems = Object.values(byItem).sort((a, b) => b.profitPIX - a.profitPIX).slice(0, 10)
     return { sales, totalQty, totalRC, totalPIX, profitRC, profitPIX, topItems }
-  }, [items, selectedMonth])
+  }, [items, selectedMonth, rate])
 
   // ── account sales for selected month ──
   const accStats = useMemo(() => {
@@ -150,13 +150,13 @@ export default function MonthlyReport() {
 
   // ── totals ──
   const grandPIX = coinStats.profitCoins + itemStats.profitPIX + accStats.profit
-  const grandRC  = itemStats.profitRC
+  const grandRC  = 0
 
   // ── chart data (last 6 months) ──
   const chartData = useMemo(() => {
     return getLastNMonths(6).map(({ key, label }) => {
       const coinP = coins.filter(c => c.type !== 'entrada' && inMonth(c.date, key)).reduce((s, c) => s + (c.profit || 0), 0)
-      const itemP = items.flatMap(it => (it.sales || []).filter(s => inMonth(s.date, key))).reduce((s, sale) => s + (sale.profitPIX || 0), 0)
+      const itemP = items.flatMap(it => (it.sales || []).filter(s => inMonth(s.date, key))).reduce((s, sale) => s + realSaleProfit(sale, rate), 0)
       const accP  = accounts.filter(a => a.status === 'vendida' && inMonth(a.dateSold, key)).reduce((s, a) => s + (a.sellPrice - a.buyPrice || 0), 0)
       return { label, coins: +coinP.toFixed(2), itens: +itemP.toFixed(2), contas: +accP.toFixed(2) }
     })

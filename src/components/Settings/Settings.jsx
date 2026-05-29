@@ -24,13 +24,15 @@ export default function Settings() {
   const [newServer, setNewServer] = useState('')
   const [prices, setPrices] = useState({ ...settings.coinPrices })
   const [minBalance, setMinBalance] = useState(settings.minCoinBalance ?? 10000)
+  const [rcRate, setRcRate] = useState(settings.rcRate ?? 0)
   const [importMsg, setImportMsg] = useState('')
   const fileRef = useRef(null)
 
   useEffect(() => {
     setPrices({ ...settings.coinPrices })
     setMinBalance(settings.minCoinBalance ?? 10000)
-  }, [settings.coinPrices, settings.minCoinBalance])
+    setRcRate(settings.rcRate ?? 0)
+  }, [settings.coinPrices, settings.minCoinBalance, settings.rcRate])
 
   const handleAddServer = () => {
     const s = newServer.trim()
@@ -47,6 +49,7 @@ export default function Settings() {
         sell:   parseFloat(prices.sell)   || 92,
       },
       minCoinBalance: parseInt(minBalance) || 0,
+      rcRate: parseFloat(rcRate) || 0,
     })
     alert('Configurações salvas!')
   }
@@ -74,10 +77,11 @@ export default function Settings() {
     const coinSold = coins.filter(c => c.type === 'saida' && c.date.startsWith(cur))
       .reduce((s, c) => s + c.quantity, 0)
 
+    const rate = settings.rcRate || 0.087
     const allSales = items.flatMap(i => i.sales ?? [])
     const monthSales = allSales.filter(s => s.date.startsWith(cur))
-    const itemProfitRC  = monthSales.reduce((s, x) => s + (x.profitRC  ?? 0), 0)
-    const itemProfitPIX = monthSales.reduce((s, x) => s + (x.profitPIX ?? 0), 0)
+    const itemProfitRC  = 0
+    const itemProfitPIX = monthSales.reduce((s, x) => s + (x.profitPIX || 0) + (x.profitRC || 0) * rate, 0)
     const itemSoldQty = monthSales.reduce((s, x) => s + x.quantity, 0)
 
     const accSold = accounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(cur))
@@ -173,6 +177,29 @@ export default function Settings() {
             </div>
           ))}
         </div>
+        {/* RC ↔ PIX conversion rate */}
+        <div className="rounded-lg p-3 space-y-2" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050' }}>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold" style={{ color: '#f59e0b' }}>⚡ Taxa de câmbio RC → R$</span>
+          </div>
+          <p className="text-xs text-gray-500">Usado para calcular o lucro real quando compra em RC e vende em PIX (ou vice-versa). Ex: se 1 RC vale R$ 0,09, coloque 0.09</p>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-400">1 RC =</span>
+            <input type="number" step="0.001" min="0"
+              className={INPUT} style={{ ...INPUT_STYLE, maxWidth: 120 }}
+              value={rcRate}
+              onChange={e => setRcRate(e.target.value)}
+              placeholder="0.09"
+            />
+            <span className="text-xs text-gray-400">R$</span>
+            {parseFloat(rcRate) > 0 && (
+              <span className="text-xs" style={{ color: '#4ade80' }}>
+                → 1.000 RC = {formatCurrency(parseFloat(rcRate) * 1000)}
+              </span>
+            )}
+          </div>
+        </div>
+
         <div>
           <label className={LABEL}>Alerta de estoque mínimo (coins)</label>
           <div className="flex items-center gap-2">

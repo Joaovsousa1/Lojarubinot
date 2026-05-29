@@ -9,28 +9,37 @@ import ItemForm from './ItemForm'
 import ItemSaleModal from './ItemSaleModal'
 
 function PriceCell({ rc, pix }) {
-  const hasRC  = rc  > 0
-  const hasPIX = pix > 0
-  if (!hasRC && !hasPIX) return <span className="text-gray-600">—</span>
+  if (!rc && !pix) return <span className="text-gray-600">—</span>
   return (
     <div className="space-y-0.5">
-      {hasRC  && <div className="text-xs font-medium" style={{ color: '#f59e0b' }}>{formatRC(rc)}</div>}
-      {hasPIX && <div className="text-xs font-medium" style={{ color: '#4ade80' }}>{formatCurrency(pix)}</div>}
+      {rc  > 0 && <div className="text-xs font-medium" style={{ color: '#f59e0b' }}>{formatRC(rc)}</div>}
+      {pix > 0 && <div className="text-xs font-medium" style={{ color: '#4ade80' }}>{formatCurrency(pix)}</div>}
     </div>
   )
 }
 
-function ProfitCell({ buyPriceRC, buyPricePIX, sellPriceRC, sellPricePIX, quantity }) {
-  const rc  = (sellPriceRC  - buyPriceRC)  * quantity
-  const pix = (sellPricePIX - buyPricePIX) * quantity
+function ProfitCell({ buyPriceRC, buyPricePIX, sellPriceRC, sellPricePIX, rcRate }) {
+  const hasAny = buyPriceRC || buyPricePIX || sellPriceRC || sellPricePIX
+  if (!hasAny) return <span className="text-gray-600">—</span>
+
+  // Taxa configurada → converte tudo para R$
+  if (rcRate > 0) {
+    const buyTotal  = (buyPricePIX  || 0) + (buyPriceRC  || 0) * rcRate
+    const sellTotal = (sellPricePIX || 0) + (sellPriceRC || 0) * rcRate
+    const profit = sellTotal - buyTotal
+    return <div className="text-xs font-medium" style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(profit)}</div>
+  }
+
+  // Sem taxa: RC só aparece se tiver compra E venda em RC
+  const rcProfit  = (sellPriceRC  || 0) - (buyPriceRC  || 0)
+  const pixProfit = (sellPricePIX || 0) - (buyPricePIX || 0)
+  const showRC  = buyPriceRC  > 0 && sellPriceRC  > 0
+  const showPIX = buyPricePIX > 0 || sellPricePIX > 0
+  if (!showRC && !showPIX) return <span className="text-gray-600">—</span>
   return (
     <div className="space-y-0.5">
-      {(sellPriceRC > 0 || buyPriceRC > 0) && (
-        <div className="text-xs font-medium" style={{ color: rc >= 0 ? '#fbbf24' : '#f87171' }}>{formatRC(rc)}</div>
-      )}
-      {(sellPricePIX > 0 || buyPricePIX > 0) && (
-        <div className="text-xs font-medium" style={{ color: pix >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(pix)}</div>
-      )}
+      {showRC  && <div className="text-xs font-medium" style={{ color: rcProfit  >= 0 ? '#fbbf24' : '#f87171' }}>{formatRC(rcProfit)}</div>}
+      {showPIX && <div className="text-xs font-medium" style={{ color: pixProfit >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(pixProfit)}</div>}
     </div>
   )
 }
@@ -188,12 +197,21 @@ export default function ItemsModule() {
 
   const totals = useMemo(() => {
     const inStock = filtered.filter(i => i.quantity > 0)
+    const rate = settings.rcRate || 0
+    if (rate > 0) {
+      const profitPIX = inStock.reduce((s, i) => {
+        const buy  = (i.buyPricePIX  || 0) + (i.buyPriceRC  || 0) * rate
+        const sell = (i.sellPricePIX || 0) + (i.sellPriceRC || 0) * rate
+        return s + (sell - buy) * i.quantity
+      }, 0)
+      return { profitRC: 0, profitPIX, count: inStock.length }
+    }
     return {
-      profitRC:  inStock.reduce((s, i) => s + (i.sellPriceRC  - i.buyPriceRC)  * i.quantity, 0),
-      profitPIX: inStock.reduce((s, i) => s + (i.sellPricePIX - i.buyPricePIX) * i.quantity, 0),
+      profitRC:  inStock.reduce((s, i) => s + ((i.sellPriceRC  || 0) - (i.buyPriceRC  || 0)) * i.quantity, 0),
+      profitPIX: inStock.reduce((s, i) => s + ((i.sellPricePIX || 0) - (i.buyPricePIX || 0)) * i.quantity, 0),
       count: inStock.length,
     }
-  }, [filtered])
+  }, [filtered, settings.rcRate])
 
   const handleClone = (it) => {
     addItem({ ...it, quantity: 1, sales: [], priceHistory: [], dateEntry: new Date().toISOString() })
@@ -289,30 +307,23 @@ export default function ItemsModule() {
                 <SortableHeader label="Item"     sk="name"      {...SH} />
                 <SortableHeader label="Servidor" sk="server"    {...SH} />
                 <SortableHeader label="Qtd"      sk="quantity"  {...SH} />
-                <th className="px-4 py-3 text-left text-xs text-gray-400 font-medium">
+                <th className="px-4 py-3 text-left text-xs text-gray-400 font-medium whitespace-nowrap">
                   Compra
                   <div className="flex gap-1 mt-0.5">
-                    <button onClick={() => toggleSort('buyRC')}  className="text-[10px] hover:text-yellow-400 transition-colors" style={{ color: sortKey === 'buyRC'  ? '#fbbf24' : '#f59e0b' }}>RC</button>
+                    <button onClick={() => toggleSort('buyRC')}  className="text-[10px] transition-colors" style={{ color: sortKey==='buyRC'  ? '#fbbf24':'#f59e0b' }}>RC</button>
                     <span className="text-gray-600 text-[10px]">/</span>
-                    <button onClick={() => toggleSort('buyPIX')} className="text-[10px] hover:text-green-400 transition-colors"  style={{ color: sortKey === 'buyPIX' ? '#4ade80' : '#4ade80' }}>PIX</button>
+                    <button onClick={() => toggleSort('buyPIX')} className="text-[10px] transition-colors" style={{ color: sortKey==='buyPIX' ? '#4ade80':'#4ade80' }}>PIX</button>
                   </div>
                 </th>
-                <th className="px-4 py-3 text-left text-xs text-gray-400 font-medium">
+                <th className="px-4 py-3 text-left text-xs text-gray-400 font-medium whitespace-nowrap">
                   Venda
                   <div className="flex gap-1 mt-0.5">
-                    <button onClick={() => toggleSort('sellRC')}  className="text-[10px] hover:text-yellow-400 transition-colors" style={{ color: sortKey === 'sellRC'  ? '#fbbf24' : '#f59e0b' }}>RC</button>
+                    <button onClick={() => toggleSort('sellRC')}  className="text-[10px] transition-colors" style={{ color: sortKey==='sellRC'  ? '#fbbf24':'#f59e0b' }}>RC</button>
                     <span className="text-gray-600 text-[10px]">/</span>
-                    <button onClick={() => toggleSort('sellPIX')} className="text-[10px] hover:text-green-400 transition-colors"  style={{ color: sortKey === 'sellPIX' ? '#4ade80' : '#4ade80' }}>PIX</button>
+                    <button onClick={() => toggleSort('sellPIX')} className="text-[10px] transition-colors" style={{ color: sortKey==='sellPIX' ? '#4ade80':'#4ade80' }}>PIX</button>
                   </div>
                 </th>
-                <th className="px-4 py-3 text-left text-xs text-gray-400 font-medium">
-                  Lucro est.
-                  <div className="flex gap-1 mt-0.5">
-                    <button onClick={() => toggleSort('profitRC')}  className="text-[10px] hover:text-yellow-400 transition-colors" style={{ color: sortKey === 'profitRC'  ? '#fbbf24' : '#f59e0b' }}>RC</button>
-                    <span className="text-gray-600 text-[10px]">/</span>
-                    <button onClick={() => toggleSort('profitPIX')} className="text-[10px] hover:text-green-400 transition-colors"  style={{ color: sortKey === 'profitPIX' ? '#4ade80' : '#4ade80' }}>PIX</button>
-                  </div>
-                </th>
+                <SortableHeader label="Lucro est." sk="profitPIX" {...SH} />
                 <th className="px-4 py-3 text-left text-xs text-gray-400 font-medium">Ações</th>
               </tr>
             </thead>
@@ -349,13 +360,13 @@ export default function ItemsModule() {
                     <td className="px-4 py-3">
                       <span className={it.quantity === 0 ? 'text-red-400' : 'text-white'}>{it.quantity}</span>
                     </td>
-                    <td className="px-4 py-3"><PriceCell rc={it.buyPriceRC || 0}  pix={it.buyPricePIX || 0} /></td>
+                    <td className="px-4 py-3"><PriceCell rc={it.buyPriceRC  || 0} pix={it.buyPricePIX  || 0} /></td>
                     <td className="px-4 py-3"><PriceCell rc={it.sellPriceRC || 0} pix={it.sellPricePIX || 0} /></td>
                     <td className="px-4 py-3">
                       <ProfitCell
-                        buyPriceRC={it.buyPriceRC || 0}   buyPricePIX={it.buyPricePIX || 0}
+                        buyPriceRC={it.buyPriceRC   || 0} buyPricePIX={it.buyPricePIX   || 0}
                         sellPriceRC={it.sellPriceRC || 0} sellPricePIX={it.sellPricePIX || 0}
-                        quantity={it.quantity}
+                        rcRate={settings.rcRate || 0}
                       />
                     </td>
                     <td className="px-4 py-3">

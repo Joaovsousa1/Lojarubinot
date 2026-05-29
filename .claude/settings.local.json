@@ -9,7 +9,12 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(vercel --prod --yes)",
       "Bash(powershell -command \"Get-Content src/data/itemsDatabase.js | Select-Object -Last 20\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue)",
+      "Bash(curl -s https://lojaestoque-mu.vercel.app/index.html)",
+      "Bash(curl -s https://lojaestoque-mu.vercel.app/assets/index-BX4O9vxa.js)",
+      "Bash(curl -sI https://lojaestoque-mu.vercel.app/index.html)",
+      "Bash(curl -s https://minhalojarubinot.vercel.app/index.html)"
     ]
   }
 }

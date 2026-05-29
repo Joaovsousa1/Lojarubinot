@@ -7,7 +7,7 @@ import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
 import {
   formatCurrency, formatRC, formatNumber, getCurrentMonth, getLastNMonths,
-  SET_COLORS, VOCATION_OUTFIT, VOCATION_COLORS,
+  SET_COLORS, VOCATION_OUTFIT, VOCATION_COLORS, realSaleProfit,
 } from '../../utils/helpers'
 import ItemImage from '../UI/ItemImage'
 import TierBadge from '../UI/TierBadge'
@@ -155,7 +155,7 @@ function AccountRow({ account: a }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { coins, items, accounts, setActiveModule } = useApp()
+  const { coins, items, accounts, settings, setActiveModule } = useApp()
   const { profile } = useAuth()
   const cur = getCurrentMonth()
 
@@ -172,8 +172,9 @@ export default function Dashboard() {
   const monthSales    = allSales.filter(s => s.date?.startsWith(cur))
   const itemsInStock  = items.reduce((s, i) => s + i.quantity, 0)
   const itemsSoldQty  = monthSales.reduce((s, x) => s + x.quantity, 0)
-  const itemsProfitRC  = monthSales.reduce((s, x) => s + (x.profitRC  ?? 0), 0)
-  const itemsProfitPIX = monthSales.reduce((s, x) => s + (x.profitPIX ?? 0), 0)
+  const rate           = settings.rcRate || 0.087
+  const itemsProfitRC  = 0
+  const itemsProfitPIX = monthSales.reduce((s, x) => s + realSaleProfit(x, rate), 0)
 
   // Accounts
   const accAvailable = accounts.filter(a => a.status === 'disponível').length
@@ -189,7 +190,7 @@ export default function Dashboard() {
   const chartData = months.map(({ key, label }) => {
     const cp   = coins.filter(c => c.type !== 'entrada' && c.date?.startsWith(key)).reduce((s, c) => s + (c.profit ?? 0), 0)
     const sale = items.flatMap(i => i.sales ?? []).filter(s => s.date?.startsWith(key))
-    const ip   = sale.reduce((s, x) => s + (x.profitPIX ?? 0), 0)
+    const ip   = sale.reduce((s, x) => s + realSaleProfit(x, rate), 0)
     const ap   = accounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
     return { label, Coins: +cp.toFixed(2), Itens: +ip.toFixed(2), Contas: +ap.toFixed(2), Total: +(cp+ip+ap).toFixed(2) }
   })

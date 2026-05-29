@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { searchItems, getItemByName } from '../../data/itemsDatabase'
 import { buildImageUrl, CATEGORY_FALLBACK, formatRC, formatCurrency } from '../../utils/helpers'
+import { useApp } from '../../context/AppContext'
 import ItemImage from '../UI/ItemImage'
 
 const INPUT = 'w-full px-3 py-2 rounded-lg text-sm text-white outline-none'
@@ -15,31 +16,44 @@ const EMPTY = {
   category: 'arma', observation: '',
 }
 
-function PriceRow({ label, rcValue, pixValue, onRcChange, onPixChange }) {
+function PriceCard({ type, rcValue, pixValue, onRcChange, onPixChange }) {
+  const isBuy  = type === 'buy'
+  const color  = isBuy ? '#f87171' : '#4ade80'
+  const label  = isBuy ? 'Compra'  : 'Venda'
+  const icon   = isBuy ? '💸'      : '💰'
   return (
-    <div>
-      <label className={LABEL}>{label}</label>
-      <div className="grid grid-cols-2 gap-2">
-        <div className="relative">
-          <input
-            type="number" min="0" step="1"
-            className={INPUT + ' pr-8'} style={INPUT_STYLE}
-            value={rcValue}
-            onChange={e => onRcChange(e.target.value)}
-            placeholder="0"
-          />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold pointer-events-none"
-            style={{ color: '#f59e0b' }}>RC</span>
+    <div className="rounded-xl p-4 space-y-3" style={{ backgroundColor: '#130e1e', border: `1px solid ${color}33` }}>
+      <div className="flex items-center gap-2">
+        <span style={{ fontSize: 16 }}>{icon}</span>
+        <span className="text-sm font-bold" style={{ color }}>{label}</span>
+      </div>
+      {/* RC */}
+      <div>
+        <div className="flex items-center gap-1.5 mb-1">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#f59e0b' }} />
+          <span className="text-xs font-semibold" style={{ color: '#f59e0b' }}>Rubini Coins (RC)</span>
         </div>
         <div className="relative">
-          <input
-            type="number" min="0" step="0.01"
+          <input type="number" min="0" step="1"
             className={INPUT + ' pr-10'} style={INPUT_STYLE}
-            value={pixValue}
-            onChange={e => onPixChange(e.target.value)}
-            placeholder="0,00"
+            value={rcValue} onChange={e => onRcChange(e.target.value)} placeholder="0"
           />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold pointer-events-none"
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black pointer-events-none"
+            style={{ color: '#f59e0b' }}>RC</span>
+        </div>
+      </div>
+      {/* PIX */}
+      <div>
+        <div className="flex items-center gap-1.5 mb-1">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#4ade80' }} />
+          <span className="text-xs font-semibold" style={{ color: '#4ade80' }}>PIX (R$)</span>
+        </div>
+        <div className="relative">
+          <input type="number" min="0" step="0.01"
+            className={INPUT + ' pr-12'} style={INPUT_STYLE}
+            value={pixValue} onChange={e => onPixChange(e.target.value)} placeholder="0,00"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black pointer-events-none"
             style={{ color: '#4ade80' }}>PIX</span>
         </div>
       </div>
@@ -48,6 +62,8 @@ function PriceRow({ label, rcValue, pixValue, onRcChange, onPixChange }) {
 }
 
 export default function ItemForm({ initial, servers, onSubmit, onClose }) {
+  const { settings } = useApp()
+  const rcRate = settings?.rcRate || 0
   const [form, setForm] = useState(initial ? { ...initial } : { ...EMPTY, server: servers[0] ?? '' })
   const [suggestions, setSuggestions] = useState([])
   const [showSug, setShowSug] = useState(false)
@@ -65,12 +81,9 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
   const selectItem = (item) => {
     setForm(f => ({
       ...f,
-      name: item.name,
-      imageUrl: item.imageUrl,
-      classification: item.classification,
-      maxTier: item.maxTier,
-      category: item.category,
-      set: item.set ?? '',
+      name: item.name, imageUrl: item.imageUrl,
+      classification: item.classification, maxTier: item.maxTier,
+      category: item.category, set: item.set ?? '',
       tier: Math.min(f.tier, item.maxTier),
     }))
     setShowSug(false)
@@ -93,38 +106,61 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
     }
   }
 
-  const tierOptions = Array.from({ length: 11 }, (_, i) => i)
-
   const handleSubmit = (e) => {
     e.preventDefault()
-    const payload = {
+    onSubmit({
       ...form,
-      quantity: parseInt(form.quantity) || 1,
-      buyPriceRC:  parseFloat(form.buyPriceRC)  || 0,
-      buyPricePIX: parseFloat(form.buyPricePIX) || 0,
+      quantity:     parseInt(form.quantity)       || 1,
+      buyPriceRC:   parseFloat(form.buyPriceRC)   || 0,
+      buyPricePIX:  parseFloat(form.buyPricePIX)  || 0,
       sellPriceRC:  parseFloat(form.sellPriceRC)  || 0,
       sellPricePIX: parseFloat(form.sellPricePIX) || 0,
-      tier: parseInt(form.tier),
+      tier:           parseInt(form.tier),
       classification: parseInt(form.classification),
-      maxTier: parseInt(form.maxTier),
+      maxTier:        parseInt(form.maxTier),
       dateEntry: initial?.dateEntry ?? new Date().toISOString(),
-    }
-    onSubmit(payload)
+    })
   }
 
-  const profitRC  = (parseFloat(form.sellPriceRC)  || 0) - (parseFloat(form.buyPriceRC)  || 0)
-  const profitPIX = (parseFloat(form.sellPricePIX) || 0) - (parseFloat(form.buyPricePIX) || 0)
-  const hasProfit = form.buyPriceRC || form.buyPricePIX || form.sellPriceRC || form.sellPricePIX
+  const bRC  = parseFloat(form.buyPriceRC)   || 0
+  const bPIX = parseFloat(form.buyPricePIX)  || 0
+  const sRC  = parseFloat(form.sellPriceRC)  || 0
+  const sPIX = parseFloat(form.sellPricePIX) || 0
+  const hasAny = bRC || bPIX || sRC || sPIX
+
+  // Lucro calculado
+  let profitDisplay = null
+  if (hasAny) {
+    if (rcRate > 0) {
+      // Taxa configurada → converte tudo para R$
+      const profit = (sPIX + sRC * rcRate) - (bPIX + bRC * rcRate)
+      profitDisplay = (
+        <span className="font-bold" style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>
+          {formatCurrency(profit)}
+        </span>
+      )
+    } else {
+      // RC só mostra se AMBOS compra e venda forem em RC
+      const rcProfit  = sRC  - bRC
+      const pixProfit = sPIX - bPIX
+      const parts = []
+      if (bRC > 0 && sRC > 0)
+        parts.push(<span key="rc" className="font-bold" style={{ color: rcProfit >= 0 ? '#fbbf24' : '#f87171' }}>{formatRC(rcProfit)}</span>)
+      if (bPIX > 0 || sPIX > 0)
+        parts.push(<span key="pix" className="font-bold" style={{ color: pixProfit >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(pixProfit)}</span>)
+      if (parts.length) profitDisplay = <>{parts}</>
+    }
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Name autocomplete */}
+
+      {/* Nome */}
       <div className="relative" ref={sugRef}>
         <label className={LABEL}>Nome do item</label>
         <div className="flex items-center gap-2">
           <ItemImage src={form.imageUrl} category={form.category} size={32} />
-          <input
-            type="text" required
+          <input type="text" required
             className={INPUT + ' flex-1'} style={INPUT_STYLE}
             value={form.name}
             onChange={e => handleNameChange(e.target.value)}
@@ -139,8 +175,7 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
             {suggestions.map(it => (
               <li key={it.name}
                 className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 text-sm text-gray-200"
-                onMouseDown={() => selectItem(it)}
-              >
+                onMouseDown={() => selectItem(it)}>
                 <ItemImage src={it.imageUrl} category={it.category} size={24} />
                 <span>{it.name}</span>
                 <span className="ml-auto text-xs text-gray-500">C{it.classification}</span>
@@ -153,24 +188,18 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={LABEL}>Classificação</label>
-          <select className={INPUT} style={INPUT_STYLE}
-            value={form.classification}
-            onChange={e => {
-              const c = parseInt(e.target.value)
-              setForm(f => ({ ...f, classification: c, maxTier: c, tier: Math.min(f.tier, c) }))
-            }}
-          >
+          <select className={INPUT} style={INPUT_STYLE} value={form.classification}
+            onChange={e => { const c = parseInt(e.target.value); setForm(f => ({ ...f, classification: c, maxTier: c, tier: Math.min(f.tier, c) })) }}>
             <option value={3}>Classe 3</option>
             <option value={4}>Classe 4</option>
           </select>
         </div>
         <div>
           <label className={LABEL}>Tier</label>
-          <select className={INPUT} style={INPUT_STYLE}
-            value={form.tier}
-            onChange={e => set('tier', parseInt(e.target.value))}
-          >
-            {tierOptions.map(t => <option key={t} value={t}>T{t}{t === 0 ? ' (Sem forge)' : ''}</option>)}
+          <select className={INPUT} style={INPUT_STYLE} value={form.tier} onChange={e => set('tier', parseInt(e.target.value))}>
+            {Array.from({ length: 11 }, (_, i) => i).map(t =>
+              <option key={t} value={t}>T{t}{t === 0 ? ' (Sem forge)' : ''}</option>
+            )}
           </select>
         </div>
       </div>
@@ -198,39 +227,22 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
           value={form.quantity} onChange={e => set('quantity', e.target.value)} />
       </div>
 
-      {/* Price section */}
-      <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050' }}>
-        <div className="flex items-center gap-4 text-xs font-semibold mb-1">
-          <span className="flex-1" />
-          <span style={{ color: '#f59e0b' }}>RC (Rubini Coins)</span>
-          <span style={{ color: '#4ade80' }}>PIX (R$)</span>
+      {/* Preços */}
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <PriceCard type="buy"
+            rcValue={form.buyPriceRC}   onRcChange={v => set('buyPriceRC', v)}
+            pixValue={form.buyPricePIX} onPixChange={v => set('buyPricePIX', v)}
+          />
+          <PriceCard type="sell"
+            rcValue={form.sellPriceRC}   onRcChange={v => set('sellPriceRC', v)}
+            pixValue={form.sellPricePIX} onPixChange={v => set('sellPricePIX', v)}
+          />
         </div>
-        <PriceRow
-          label="Preço de compra"
-          rcValue={form.buyPriceRC}   onRcChange={v => set('buyPriceRC', v)}
-          pixValue={form.buyPricePIX} onPixChange={v => set('buyPricePIX', v)}
-        />
-        <PriceRow
-          label="Preço de venda pretendido"
-          rcValue={form.sellPriceRC}   onRcChange={v => set('sellPriceRC', v)}
-          pixValue={form.sellPricePIX} onPixChange={v => set('sellPricePIX', v)}
-        />
-
-        {hasProfit && (
-          <div className="flex justify-between items-center pt-2 border-t text-xs" style={{ borderColor: '#3a3050' }}>
+        {profitDisplay && (
+          <div className="flex justify-between items-center px-1 text-xs">
             <span className="text-gray-400">Lucro estimado</span>
-            <div className="flex gap-3">
-              {(profitRC !== 0) && (
-                <span style={{ color: profitRC >= 0 ? '#fbbf24' : '#f87171' }} className="font-bold">
-                  {formatRC(profitRC)}
-                </span>
-              )}
-              {(profitPIX !== 0) && (
-                <span style={{ color: profitPIX >= 0 ? '#4ade80' : '#f87171' }} className="font-bold">
-                  {formatCurrency(profitPIX)}
-                </span>
-              )}
-            </div>
+            <div className="flex gap-3">{profitDisplay}</div>
           </div>
         )}
       </div>
@@ -244,12 +256,14 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
       <div className="flex gap-3 pt-1">
         <button type="button" onClick={onClose}
           className="flex-1 py-2 rounded-lg text-sm"
-          style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#9ca3af' }}
-        >Cancelar</button>
+          style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#9ca3af' }}>
+          Cancelar
+        </button>
         <button type="submit"
           className="flex-1 py-2 rounded-lg text-sm font-semibold text-white"
-          style={{ backgroundColor: '#7c3aed' }}
-        >{initial ? 'Salvar' : 'Adicionar'}</button>
+          style={{ backgroundColor: '#7c3aed' }}>
+          {initial ? 'Salvar' : 'Adicionar'}
+        </button>
       </div>
     </form>
   )
