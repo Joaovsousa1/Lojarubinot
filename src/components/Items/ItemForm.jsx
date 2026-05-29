@@ -16,6 +16,11 @@ const EMPTY = {
   category: 'arma', observation: '',
 }
 
+const DRAFT_KEY = 'items_form_draft'
+const saveDraft = (data) => { try { sessionStorage.setItem(DRAFT_KEY, JSON.stringify(data)) } catch {} }
+const loadDraft = () => { try { const s = sessionStorage.getItem(DRAFT_KEY); return s ? JSON.parse(s) : null } catch { return null } }
+const clearDraft = () => sessionStorage.removeItem(DRAFT_KEY)
+
 function PriceCard({ type, rcValue, pixValue, onRcChange, onPixChange }) {
   const isBuy  = type === 'buy'
   const color  = isBuy ? '#f87171' : '#4ade80'
@@ -64,12 +69,20 @@ function PriceCard({ type, rcValue, pixValue, onRcChange, onPixChange }) {
 export default function ItemForm({ initial, servers, onSubmit, onClose }) {
   const { settings } = useApp()
   const rcRate = settings?.rcRate || 0
-  const [form, setForm] = useState(initial ? { ...initial } : { ...EMPTY, server: servers[0] ?? '' })
+  const [form, setFormRaw] = useState(() => {
+    if (initial) return { ...initial }
+    const draft = loadDraft()
+    return draft ?? { ...EMPTY, server: servers[0] ?? '' }
+  })
   const [suggestions, setSuggestions] = useState([])
   const [showSug, setShowSug] = useState(false)
   const sugRef = useRef(null)
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k, v) => setFormRaw(f => {
+    const next = { ...f, [k]: v }
+    if (!initial) saveDraft(next)
+    return next
+  })
 
   const handleNameChange = (val) => {
     set('name', val)
@@ -79,13 +92,17 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
   }
 
   const selectItem = (item) => {
-    setForm(f => ({
-      ...f,
-      name: item.name, imageUrl: item.imageUrl,
-      classification: item.classification, maxTier: item.maxTier,
-      category: item.category, set: item.set ?? '',
-      tier: Math.min(f.tier, item.maxTier),
-    }))
+    setFormRaw(f => {
+      const next = {
+        ...f,
+        name: item.name, imageUrl: item.imageUrl,
+        classification: item.classification, maxTier: item.maxTier,
+        category: item.category, set: item.set ?? '',
+        tier: Math.min(f.tier, item.maxTier),
+      }
+      if (!initial) saveDraft(next)
+      return next
+    })
     setShowSug(false)
   }
 
@@ -108,6 +125,7 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    clearDraft()
     onSubmit({
       ...form,
       quantity:     parseInt(form.quantity)       || 1,
@@ -254,7 +272,7 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
       </div>
 
       <div className="flex gap-3 pt-1">
-        <button type="button" onClick={onClose}
+        <button type="button" onClick={() => { if (!initial) clearDraft(); onClose() }}
           className="flex-1 py-2 rounded-lg text-sm"
           style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#9ca3af' }}>
           Cancelar

@@ -147,7 +147,8 @@ function ItemCard({ it, onEdit, onDelete, onSell, onHistory, onClone }) {
 
 export default function ItemsModule() {
   const { items, settings, addItem, updateItem, deleteItem, sellItem } = useApp()
-  const [showForm,    setShowForm]    = useState(false)
+  const [showForm,    _setShowForm]   = useState(() => sessionStorage.getItem('items_modal') === '1')
+  const setShowForm = (v) => { v ? sessionStorage.setItem('items_modal','1') : sessionStorage.removeItem('items_modal'); _setShowForm(v) }
   const [editing,     setEditing]     = useState(null)
   const [selling,     setSelling]     = useState(null)
   const [showHistory, setShowHistory] = useState(null)
