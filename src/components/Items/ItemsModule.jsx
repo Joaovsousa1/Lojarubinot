@@ -18,15 +18,28 @@ function PriceCell({ rc, pix }) {
   )
 }
 
-function ProfitCell({ buyPriceRC, buyPricePIX, sellPriceRC, sellPricePIX, rcRate }) {
+function ProfitCell({ buyPriceRC, buyPricePIX, sellPriceRC, sellPricePIX, rcRate, sales = [] }) {
   const hasBuy  = (buyPriceRC  || 0) > 0 || (buyPricePIX  || 0) > 0
   const hasSell = (sellPriceRC || 0) > 0 || (sellPricePIX || 0) > 0
+  const rate    = rcRate || 0.087
 
-  // Só calcula se tiver preço de compra E venda
+  // Item já vendido (sem preço listado): usa lucro real das vendas registradas
+  if (!hasSell && sales.length > 0) {
+    const realized = sales.reduce((sum, s) =>
+      sum + (s.profitPIX || 0) + (s.profitRC || 0) * rate, 0)
+    return (
+      <div style={{ lineHeight: 1.3 }}>
+        <div className="text-xs font-medium" style={{ color: realized >= 0 ? '#4ade80' : '#f87171' }}>
+          {formatCurrency(realized)}
+        </div>
+        <div style={{ fontSize: 10, color: '#6b7280' }}>realizado</div>
+      </div>
+    )
+  }
+
+  // Item listado com preço de compra e venda: estimativa
   if (!hasBuy || !hasSell) return <span className="text-gray-600">—</span>
 
-  // Sempre converte tudo para R$ usando a taxa (padrão 0.087 se não configurada)
-  const rate     = rcRate || 0.087
   const buyTotal  = (buyPricePIX  || 0) + (buyPriceRC  || 0) * rate
   const sellTotal = (sellPricePIX || 0) + (sellPriceRC || 0) * rate
   const profit    = sellTotal - buyTotal
@@ -390,6 +403,7 @@ export default function ItemsModule() {
                         buyPriceRC={it.buyPriceRC   || 0} buyPricePIX={it.buyPricePIX   || 0}
                         sellPriceRC={it.sellPriceRC || 0} sellPricePIX={it.sellPricePIX || 0}
                         rcRate={settings.rcRate || 0}
+                        sales={it.sales || []}
                       />
                     </td>
                     <td className="px-4 py-3">
