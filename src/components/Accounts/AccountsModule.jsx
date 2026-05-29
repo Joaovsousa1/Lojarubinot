@@ -86,16 +86,21 @@ function generateSalesText(acc) {
   if (skills.ml > 0) {
     const loyalty = acc.loyaltySkill > 0 ? ` + ${acc.loyaltySkill} Loyalty` : ''
     add(`✨ Magic Level ${skills.ml}${loyalty}`)
-  } else {
-    const combatSkills = [
-      skills.sword > 0 && `Sword ${skills.sword}`,
-      skills.axe   > 0 && `Axe ${skills.axe}`,
-      skills.club  > 0 && `Club ${skills.club}`,
-      skills.dist  > 0 && `Dist ${skills.dist}`,
-      skills.fist  > 0 && `Fist ${skills.fist}`,
-    ].filter(Boolean)
-    if (combatSkills.length) add(`✨ ${combatSkills.join(' | ')}${acc.loyaltySkill > 0 ? ` + ${acc.loyaltySkill} Loyalty` : ''}`)
-    else if (acc.loyaltySkill > 0) add(`✨ Loyalty ${acc.loyaltySkill}`)
+  }
+
+  const combatSkills = [
+    skills.sword > 0 && `Sword ${skills.sword}`,
+    skills.axe   > 0 && `Axe ${skills.axe}`,
+    skills.club  > 0 && `Club ${skills.club}`,
+    skills.dist  > 0 && `Dist ${skills.dist}`,
+    skills.fist  > 0 && `Fist ${skills.fist}`,
+  ].filter(Boolean)
+
+  if (combatSkills.length) {
+    const loyalty = skills.ml === 0 && acc.loyaltySkill > 0 ? ` + ${acc.loyaltySkill} Loyalty` : ''
+    add(`⚔️  ${combatSkills.join(' | ')}${loyalty}`)
+  } else if (skills.ml === 0 && acc.loyaltySkill > 0) {
+    add(`✨ Loyalty ${acc.loyaltySkill}`)
   }
 
   if (skills.shielding > 0) add(`🛡️ Shielding ${skills.shielding}`)
