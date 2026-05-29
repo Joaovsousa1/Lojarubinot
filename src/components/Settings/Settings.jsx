@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Plus, Trash2, Download, Upload, FileText } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
+import { supabase } from '../../lib/supabase'
+import { useAuth } from '../../context/AuthContext'
 import { formatCurrency, formatNumber, getCurrentMonth, getLastNMonths } from '../../utils/helpers'
 
 const INPUT = 'w-full px-3 py-2 rounded-lg text-sm text-white outline-none'
@@ -17,7 +19,8 @@ function Section({ title, children }) {
 }
 
 export default function Settings() {
-  const { settings, coins, items, accounts, addServer, removeServer, updateSettings, exportData, importData } = useApp()
+  const { user } = useAuth()
+  const { settings, coins, items, accounts, addServer, removeServer, updateSettings, exportData, importData, setCoins, setItems, setAccounts } = useApp()
   const [newServer, setNewServer] = useState('')
   const [prices, setPrices] = useState({ ...settings.coinPrices })
   const [minBalance, setMinBalance] = useState(settings.minCoinBalance ?? 10000)
@@ -52,8 +55,8 @@ export default function Settings() {
     const file = e.target.files[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => {
-      const ok = importData(ev.target.result)
+    reader.onload = async (ev) => {
+      const ok = await importData(ev.target.result)
       setImportMsg(ok ? '✓ Dados importados com sucesso!' : '✗ Erro ao importar JSON.')
       setTimeout(() => setImportMsg(''), 3000)
     }
@@ -219,13 +222,18 @@ export default function Settings() {
 
       {/* Danger zone */}
       <Section title="Zona de risco">
-        <p className="text-xs text-gray-500">Limpar todos os dados da aplicação. Esta ação não pode ser desfeita.</p>
+        <p className="text-xs text-gray-500">Apaga todos os seus coins, itens e contas do banco de dados. Esta ação não pode ser desfeita.</p>
         <button
-          onClick={() => {
-            if (confirm('Tem certeza que deseja apagar TODOS os dados?')) {
-              localStorage.clear()
-              window.location.reload()
-            }
+          onClick={async () => {
+            if (!confirm('Tem certeza que deseja apagar TODOS os seus dados? Isso não pode ser desfeito.')) return
+            if (!confirm('Segunda confirmação: apagar TUDO mesmo?')) return
+            await Promise.all([
+              supabase.from('coins').delete().eq('user_id', user.id),
+              supabase.from('items').delete().eq('user_id', user.id),
+              supabase.from('accounts').delete().eq('user_id', user.id),
+            ])
+            setCoins([]); setItems([]); setAccounts([])
+            localStorage.removeItem('rubinot_remember_email')
           }}
           className="px-4 py-2 rounded-lg text-sm font-medium"
           style={{ backgroundColor: '#7f1d1d', border: '1px solid #dc2626', color: '#f87171' }}

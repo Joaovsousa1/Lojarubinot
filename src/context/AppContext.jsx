@@ -315,20 +315,31 @@ export function AppProvider({ children }) {
   const importData = async (json) => {
     try {
       const d = JSON.parse(json)
-      if (d.coins) {
-        setCoins(d.coins)
-        await supabase.from('coins').delete().eq('user_id', user.id)
+      if (!d || typeof d !== 'object') throw new Error('JSON inválido')
+
+      // Valida estrutura antes de apagar qualquer coisa
+      if (d.coins    && !Array.isArray(d.coins))    throw new Error('Campo coins inválido')
+      if (d.items    && !Array.isArray(d.items))    throw new Error('Campo items inválido')
+      if (d.accounts && !Array.isArray(d.accounts)) throw new Error('Campo accounts inválido')
+
+      // Só deleta e insere após validação bem-sucedida
+      if (d.coins !== undefined) {
+        const { error } = await supabase.from('coins').delete().eq('user_id', user.id)
+        if (error) throw new Error(`Erro ao limpar coins: ${error.message}`)
         if (d.coins.length) await supabase.from('coins').insert(d.coins.map(c => ({ ...c, user_id: user.id })))
+        setCoins(d.coins)
       }
-      if (d.items) {
-        setItems(d.items)
-        await supabase.from('items').delete().eq('user_id', user.id)
+      if (d.items !== undefined) {
+        const { error } = await supabase.from('items').delete().eq('user_id', user.id)
+        if (error) throw new Error(`Erro ao limpar itens: ${error.message}`)
         if (d.items.length) await supabase.from('items').insert(d.items.map(it => itemToDb(it)))
+        setItems(d.items)
       }
-      if (d.accounts) {
-        setAccounts(d.accounts)
-        await supabase.from('accounts').delete().eq('user_id', user.id)
+      if (d.accounts !== undefined) {
+        const { error } = await supabase.from('accounts').delete().eq('user_id', user.id)
+        if (error) throw new Error(`Erro ao limpar contas: ${error.message}`)
         if (d.accounts.length) await supabase.from('accounts').insert(d.accounts.map(a => accountToDb(a)))
+        setAccounts(d.accounts)
       }
       if (d.settings) await updateSettings(d.settings)
       return true

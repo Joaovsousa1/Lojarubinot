@@ -90,7 +90,9 @@ function AppShell() {
 function ExpiryBanner() {
   const { profile } = useAuth()
   if (!profile?.plan_expires_at) return null
-  const daysLeft = Math.ceil((new Date(profile.plan_expires_at) - new Date()) / 86400000)
+  const expiry = new Date(profile.plan_expires_at)
+  if (isNaN(expiry)) return null
+  const daysLeft = Math.ceil((expiry - new Date()) / 86400000)
   if (daysLeft > 7) return null
   return (
     <div className="fixed bottom-4 right-4 z-50 px-4 py-3 rounded-xl text-sm shadow-2xl"
