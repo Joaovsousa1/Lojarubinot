@@ -244,7 +244,7 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
     { key: 'axe',       label: 'Machado'  },
     { key: 'dist',      label: 'Distância'},
     { key: 'fist',      label: 'Fist'     },
-    { key: 'club',      label: 'Clava'    },
+    { key: 'club',      label: 'Club'     },
     { key: 'shielding', label: 'Escudo'   },
   ]
 
