@@ -167,7 +167,6 @@ function CoinModal({ type, onClose }) {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 16, backgroundColor: 'rgba(0,0,0,0.75)',
       }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div style={{
         width: '100%', maxWidth: 460,

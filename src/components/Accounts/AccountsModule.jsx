@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, formatDate, VOCATION_COLORS, VOCATION_OUTFIT, VOCATION_BG, STATUS_COLORS } from '../../utils/helpers'
@@ -150,14 +150,20 @@ function generateSalesText(acc) {
   add()
   add('━━━━━━━━━━━━━━━━━━━━━━')
   add('🌐 MinhaLojaRubinot')
-  add('minhalojarubinot.vercel.app')
 
   return L.join('\n')
 }
 
+const QUICK_EMOJIS = [
+  '💥','✨','⏳','🌍','⚔️','🎒','🩸','👕','🐴','🌟',
+  '🧠','🏆','💰','📩','🎯','🧿','📜','🎄','🔆','💸',
+  '🛡️','🚀','🎟️','🏠','📦','🗡️','🔥','💎','⭐','🎮',
+]
+
 function SalesTextModal({ acc, onClose }) {
+  const [text, setText] = useState(() => generateSalesText(acc))
   const [copied, setCopied] = useState(false)
-  const text = useMemo(() => generateSalesText(acc), [acc])
+  const taRef = useRef(null)
 
   useEffect(() => {
     const fn = (e) => { if (e.key === 'Escape') onClose() }
@@ -165,24 +171,34 @@ function SalesTextModal({ acc, onClose }) {
     return () => window.removeEventListener('keydown', fn)
   }, [onClose])
 
+  const insertEmoji = (emoji) => {
+    const ta = taRef.current
+    if (!ta) { setText(t => t + emoji); return }
+    const start = ta.selectionStart ?? text.length
+    const end   = ta.selectionEnd   ?? text.length
+    const next  = text.slice(0, start) + emoji + text.slice(end)
+    setText(next)
+    setTimeout(() => {
+      ta.selectionStart = ta.selectionEnd = start + emoji.length
+      ta.focus()
+    }, 0)
+  }
+
   const handleCopy = () => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setTimeout(() => setCopied(false), 2500)
     })
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 9999,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 16, backgroundColor: 'rgba(0,0,0,0.75)',
-      }}
-      onClick={e => { if (e.target === e.currentTarget) onClose() }}
-    >
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 9999,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 16, backgroundColor: 'rgba(0,0,0,0.75)',
+    }}>
       <div style={{
-        width: '100%', maxWidth: 520, maxHeight: '90vh',
+        width: '100%', maxWidth: 560, maxHeight: '92vh',
         backgroundColor: '#1c1530',
         border: '1px solid #7c3aed',
         borderRadius: 20,
@@ -190,7 +206,7 @@ function SalesTextModal({ acc, onClose }) {
         boxShadow: '0 0 60px #3b076488',
       }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #3a3050' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '1px solid #3a3050', flexShrink: 0 }}>
           <span style={{ fontWeight: 700, fontSize: 14, color: '#c084fc' }}>
             📣 Texto de Anúncio — {acc.charName || `${acc.vocation} Lv${acc.level}`}
           </span>
@@ -199,25 +215,41 @@ function SalesTextModal({ acc, onClose }) {
           ><X size={18} /></button>
         </div>
 
-        {/* Text area */}
+        {/* Emoji bar */}
+        <div style={{ padding: '8px 16px', borderBottom: '1px solid #3a3050', flexShrink: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 3 }}>
+          <span style={{ fontSize: 10, color: '#6b7280', marginRight: 4, whiteSpace: 'nowrap' }}>Inserir emoji:</span>
+          {QUICK_EMOJIS.map(e => (
+            <button key={e} onClick={() => insertEmoji(e)}
+              title={`Inserir ${e}`}
+              style={{
+                background: 'none', border: '1px solid #3a3050', borderRadius: 6,
+                cursor: 'pointer', fontSize: 15, padding: '2px 5px', lineHeight: 1.3,
+                transition: 'border-color 0.15s',
+              }}
+            >{e}</button>
+          ))}
+        </div>
+
+        {/* Editable textarea */}
         <textarea
-          readOnly
+          ref={taRef}
           value={text}
+          onChange={e => setText(e.target.value)}
           style={{
             flex: 1, resize: 'none', padding: '16px 20px',
             backgroundColor: '#0e0919', color: '#e5e7eb',
-            fontSize: 13, lineHeight: 1.7, fontFamily: 'monospace',
+            fontSize: 13, lineHeight: 1.75, fontFamily: 'monospace',
             border: 'none', outline: 'none', overflowY: 'auto',
-            minHeight: 200,
+            minHeight: 180,
           }}
         />
 
         {/* Footer */}
-        <div style={{ padding: '12px 20px', borderTop: '1px solid #3a3050', display: 'flex', gap: 10 }}>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #3a3050', display: 'flex', gap: 10, flexShrink: 0 }}>
           <button onClick={handleCopy}
             style={{
               flex: 1, padding: '9px 0', borderRadius: 10, fontWeight: 600, fontSize: 13,
-              cursor: 'pointer', border: 'none', transition: 'background 0.2s',
+              cursor: 'pointer', border: 'none',
               backgroundColor: copied ? '#14532d' : '#7c3aed',
               color: copied ? '#4ade80' : '#fff',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -480,10 +512,18 @@ function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce }) {
             className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{ backgroundColor: '#3b0764', border: '1px solid #6d28d9', color: '#c084fc' }}
           ><Pencil size={12} /> Editar</button>
-          <button onClick={onAnnounce} title="Gerar texto de anúncio"
-            className="py-1.5 px-3 rounded-lg text-xs transition-colors"
-            style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#f59e0b' }}
-          ><Megaphone size={12} /></button>
+          <div style={{ position: 'relative' }} className="group">
+            <button onClick={onAnnounce}
+              className="py-1.5 px-3 rounded-lg text-xs transition-colors"
+              style={{ backgroundColor: '#14532d', border: '1px solid #16a34a', color: '#4ade80' }}
+            ><Megaphone size={13} /></button>
+            <div className="group-hover:flex hidden" style={{
+              position: 'absolute', bottom: '110%', left: '50%', transform: 'translateX(-50%)',
+              backgroundColor: '#14532d', border: '1px solid #16a34a', color: '#4ade80',
+              fontSize: 10, fontWeight: 600, whiteSpace: 'nowrap',
+              padding: '3px 8px', borderRadius: 6, pointerEvents: 'none', zIndex: 50,
+            }}>Faça seu anúncio</div>
+          </div>
           <button onClick={onClone} title="Duplicar conta"
             className="py-1.5 px-3 rounded-lg text-xs transition-colors"
             style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#60a5fa' }}
