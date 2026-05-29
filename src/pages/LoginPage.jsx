@@ -535,9 +535,135 @@ export default function LoginPage() {
           <FeatureCard icon="📦" title="Estoque de Itens" color="#a855f7"
             desc="Catálogo com sprites dos itens, tiers, sets e preços de compra/venda." />
           <FeatureCard icon="👤" title="Contas de Personagens" color="#22c55e"
-            desc="Gerencie chars à venda com nível, vocação, outfits e mounts em um só lugar." />
+            desc="Gerencie chars com level, vocação, skills, outfits, mounts e itens notáveis." />
           <FeatureCard icon="📋" title="Relatório Mensal" color="#0ea5e9"
             desc="Relatório automático completo ao final de cada mês com lucros, vendas e métricas." />
+          <FeatureCard icon="📣" title="Gerador de Anúncio" color="#f472b6"
+            desc="Gera o texto de venda do char automaticamente para copiar e colar no grupo do WhatsApp ou Discord." />
+          <FeatureCard icon="🧮" title="Calculadora de Lucro" color="#34d399"
+            desc="Calcule na hora quanto vai lucrar por pacote de coins, com preços configuráveis por usuário." />
+        </div>
+      </section>
+
+      {/* ── Announcement preview ── */}
+      <section style={{
+        position: 'relative', zIndex: 1,
+        padding: '0 6% 110px',
+        maxWidth: 1260, margin: '0 auto',
+      }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'center' }}>
+
+          {/* Left: explanation */}
+          <div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              backgroundColor: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.35)',
+              borderRadius: 100, padding: '6px 16px', fontSize: 12, color: '#f9a8d4',
+              fontWeight: 600, marginBottom: 24, letterSpacing: '0.05em',
+            }}>
+              📣 Gerador de anúncio
+            </div>
+            <h2 style={{ margin: '0 0 18px', fontSize: 'clamp(24px,2.8vw,36px)', fontWeight: 900, color: '#f1f5f9', letterSpacing: '-0.5px', lineHeight: 1.15 }}>
+              Post pronto para o grupo<br />
+              <span style={{ background: 'linear-gradient(90deg,#f472b6,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                em um clique
+              </span>
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: 16, lineHeight: 1.75, marginBottom: 28, maxWidth: 440 }}>
+              Cadastre as informações do char — level, skills, VIP, outfits, itens, diferenciais — e o sistema monta o texto de venda formatado para você copiar e enviar no WhatsApp ou Discord.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {[
+                { icon: '⚡', text: 'Preencha uma vez, gere quantas vezes quiser' },
+                { icon: '✏️', text: 'Edite o texto antes de copiar — adicione emojis e detalhes extras' },
+                { icon: '📋', text: 'Botão "Copiar" envia tudo pro clipboard na hora' },
+                { icon: '🌐', text: 'Marca d\'água automática da sua loja no rodapé' },
+              ].map((it, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                  <span style={{
+                    width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                    backgroundColor: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+                  }}>{it.icon}</span>
+                  <span style={{ color: '#cbd5e1', fontSize: 14, lineHeight: 1.6, paddingTop: 6 }}>{it.text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: mock post preview */}
+          <div style={{ position: 'relative' }}>
+            <div style={{
+              position: 'absolute', inset: -20,
+              background: 'radial-gradient(ellipse at center, rgba(244,114,182,0.12) 0%, transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{
+              backgroundColor: '#1a1025',
+              border: '1px solid rgba(244,114,182,0.3)',
+              borderRadius: 18,
+              overflow: 'hidden',
+              boxShadow: '0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(244,114,182,0.1)',
+              fontFamily: 'monospace',
+              fontSize: 13,
+              position: 'relative',
+            }}>
+              {/* Header bar */}
+              <div style={{ backgroundColor: '#2a2035', padding: '10px 16px', borderBottom: '1px solid #3a3050', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 15 }}>📣</span>
+                <span style={{ color: '#c084fc', fontWeight: 700, fontSize: 13 }}>Texto de Anúncio — Lord Drakkar</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#3a3050' }} />
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#3a3050' }} />
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', backgroundColor: '#3a3050' }} />
+                </div>
+              </div>
+              {/* Post content */}
+              <div style={{ padding: '18px 20px', color: '#d1d5db', lineHeight: 1.85, whiteSpace: 'pre-wrap', fontSize: 12.5 }}>
+{`💥 Level 1022
+✨ Magic Level 134 + 8 Loyalty
+⏳ 1.191 dias de VIP
+
+🌍 Servidor: Auroria
+⚔️  Vocação: Sorcerer
+
+🎒 Set e itens que acompanham a ACC:
+🩸 Set Sanguine t3
+🩸 Coil t4, Folio, Arcano Ring
+
+👕 Outfits (12): Void Master...
+🐴 Montarias (8): ...
+
+🌟 Diferenciais do char:
+
+🧿 3ª Prey + 65 Cards disponíveis
+🎟️ Battle Pass 3 completo (Astral)
+🔆 Gems meta desbloqueadas
+
+🧠 6.775 Charm Points
+⚔️  210 Boss Points
+
+💰 Valor: R$ 2.500,00
+
+📩 Entre em contato!
+
+━━━━━━━━━━━━━━━━━━━━━━
+🌐 MinhaLojaRubinot`}
+              </div>
+              {/* Copy button */}
+              <div style={{ padding: '12px 16px', borderTop: '1px solid #3a3050', display: 'flex', gap: 8 }}>
+                <div style={{
+                  flex: 1, padding: '8px 0', borderRadius: 8, textAlign: 'center',
+                  backgroundColor: '#7c3aed', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'default',
+                }}>📋 Copiar texto</div>
+                <div style={{
+                  padding: '8px 16px', borderRadius: 8,
+                  backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#9ca3af', fontSize: 12, cursor: 'default',
+                }}>Fechar</div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
