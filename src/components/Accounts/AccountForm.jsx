@@ -248,8 +248,48 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
     { key: 'shielding', label: 'Escudo'   },
   ]
 
+  const [guideOpen, setGuideOpen] = useState(false)
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+
+      {/* Guide panel */}
+      <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #7c3aed55' }}>
+        <button type="button"
+          onClick={() => setGuideOpen(v => !v)}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '10px 14px', background: 'linear-gradient(135deg,#3b076433,#1e1b4b33)',
+            border: 'none', cursor: 'pointer', color: '#c084fc', fontSize: 13, fontWeight: 600,
+          }}>
+          <span>📣 Como preencher para gerar o anúncio automaticamente</span>
+          <span style={{ fontSize: 16, transition: 'transform 0.2s', transform: guideOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+        </button>
+        {guideOpen && (
+          <div style={{ backgroundColor: '#0e0919', padding: '14px 16px', fontSize: 12, lineHeight: 1.9, color: '#94a3b8' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 20px' }}>
+              {[
+                ['💥 Level + Vocação',       'Aparecem no cabeçalho do post'],
+                ['✨ Skills (ML, Dist...)',   'Linha "Magic Level X + Y Loyalty"'],
+                ['⏳ VIP Days + Loyalty',     'Linha "X dias de VIP" no cabeçalho'],
+                ['🎒 Itens Notáveis',         '"Set e itens que acompanham a ACC"'],
+                ['👕 Outfits / 🐴 Montarias', 'Listados com quantidade total'],
+                ['🧠 Charm / Boss / Tasks',   'Aparecem no final do anúncio'],
+                ['🌟 Diferenciais do char',   'Seção livre — cada linha vira 1 linha no post'],
+                ['💰 Preço de venda',         '"Valor: R$ X,XX" no rodapé'],
+              ].map(([campo, desc], i) => (
+                <div key={i} style={{ display: 'flex', gap: 6 }}>
+                  <span style={{ color: '#7c3aed', flexShrink: 0 }}>→</span>
+                  <span><span style={{ color: '#e2e8f0', fontWeight: 600 }}>{campo}:</span> {desc}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 10, padding: '8px 12px', backgroundColor: '#1a1025', borderRadius: 8, borderLeft: '3px solid #7c3aed', color: '#a78bfa', fontSize: 11 }}>
+              💡 Dica: Use o campo <strong>Diferenciais do char</strong> para escrever cada detalhe especial em uma linha separada, com emojis. Ex: <em>🧿 3ª Prey desbloqueada</em> · <em>🎟️ Battle Pass completo</em>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Identity */}
       <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050' }}>
