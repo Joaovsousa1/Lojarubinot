@@ -340,18 +340,18 @@ export default function CoinsModule() {
             />
           </div>
 
-          <div className="rounded-xl overflow-hidden" style={{ border: '1px solid #3a3050' }}>
-            <table className="w-full text-sm">
+          <div style={{ border: '1px solid #3a3050', borderRadius: 12, overflowX: 'auto' }}>
+            <table className="text-sm" style={{ width: '100%', minWidth: 780, borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ backgroundColor: '#1a1025' }}>
-                  {['Tipo', 'Data', 'Quantidade', 'Preço/k', 'Total', 'Servidor', 'Lucro', ''].map(h => (
+                  {['Tipo / Observação', 'Data', 'Quantidade', 'Pacote', 'Preço/k', 'Total', 'Servidor', 'Lucro', ''].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs text-gray-400 font-medium">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 && (
-                  <tr><td colSpan={8} className="px-4 py-8 text-center text-gray-500">Sem transações.</td></tr>
+                  <tr><td colSpan={9} className="px-4 py-8 text-center text-gray-500">Sem transações.</td></tr>
                 )}
                 {filtered.map(c => (
                   <tr key={c.id} className="border-t" style={{ borderColor: '#3a3050' }}>
@@ -360,9 +360,24 @@ export default function CoinsModule() {
                         ? <span className="flex items-center gap-1 text-green-400"><ArrowDownCircle size={14} /> Entrada</span>
                         : <span className="flex items-center gap-1 text-red-400"><ArrowUpCircle size={14} /> Saída</span>
                       }
+                      {c.observation
+                        ? <div style={{ fontSize: 11, color: '#9ca3af', fontStyle: 'italic', marginTop: 2, maxWidth: 200, wordBreak: 'break-word' }}>
+                            {c.observation}
+                          </div>
+                        : null
+                      }
                     </td>
-                    <td className="px-4 py-3 text-gray-400">{formatDateTime(c.date)}</td>
+                    <td className="px-4 py-3 text-gray-400 text-xs">{formatDateTime(c.date)}</td>
                     <td className="px-4 py-3 text-white font-medium">{formatNumber(c.quantity)}</td>
+                    <td className="px-4 py-3">
+                      {c.packageType
+                        ? <span className="px-2 py-0.5 rounded text-xs font-bold"
+                            style={{ backgroundColor: '#3b0764', color: '#c084fc', border: '1px solid #6d28d9' }}>
+                            {c.packageType}
+                          </span>
+                        : <span className="text-gray-600 text-xs">—</span>
+                      }
+                    </td>
                     <td className="px-4 py-3 text-gray-400">{formatCurrency(c.pricePerK)}</td>
                     <td className="px-4 py-3 text-white">
                       {c.type === 'entrada' ? formatCurrency(c.totalPaid) : formatCurrency(c.totalReceived)}
