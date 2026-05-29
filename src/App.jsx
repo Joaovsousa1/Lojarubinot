@@ -53,21 +53,25 @@ function ToastContainer() {
 // ── Main app shell ─────────────────────────────────────────────────────────
 function AppShell() {
   const { activeModule } = useApp()
-  const map = {
-    dashboard: <Dashboard />,
-    coins:     <CoinsModule />,
-    items:     <ItemsModule />,
-    accounts:  <AccountsModule />,
-    tools:     <ToolsModule />,
-    reports:   <MonthlyReport />,
-    settings:  <Settings />,
-  }
+  const modules = [
+    { id: 'dashboard', el: <Dashboard /> },
+    { id: 'coins',     el: <CoinsModule /> },
+    { id: 'items',     el: <ItemsModule /> },
+    { id: 'accounts',  el: <AccountsModule /> },
+    { id: 'tools',     el: <ToolsModule /> },
+    { id: 'reports',   el: <MonthlyReport /> },
+    { id: 'settings',  el: <Settings /> },
+  ]
   return (
     <div className="flex min-h-screen" style={{ backgroundColor: '#0e0919' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-y-auto">
         <main className="flex-1">
-          {map[activeModule] ?? <Dashboard />}
+          {modules.map(m => (
+            <div key={m.id} style={{ display: activeModule === m.id ? 'block' : 'none' }}>
+              {m.el}
+            </div>
+          ))}
         </main>
         <footer className="text-center py-3 px-4 text-xs" style={{ color: '#4b4560', borderTop: '1px solid #2a2035' }}>
           Site desenvolvido por <span style={{ color: '#7c3aed' }}>Kiara Store</span>
