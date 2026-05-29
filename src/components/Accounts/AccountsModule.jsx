@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search } from 'lucide-react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, formatDate, VOCATION_COLORS, VOCATION_OUTFIT, VOCATION_BG, STATUS_COLORS } from '../../utils/helpers'
 import { OUTFITS_DATABASE } from '../../data/outfitsDatabase'
@@ -72,7 +72,153 @@ function SkillRow({ skills = {} }) {
   )
 }
 
-function AccountCard({ acc, onEdit, onDelete, onClone }) {
+function generateSalesText(acc) {
+  const lines = []
+
+  lines.push('🔥 CONTA À VENDA 🔥')
+  lines.push('')
+
+  if (acc.charName) lines.push(`👤 Personagem: ${acc.charName}`)
+  lines.push(`⚔️  Vocação: ${acc.vocation}`)
+  lines.push(`📊 Level: ${acc.level}`)
+  if (acc.server) lines.push(`🌍 Servidor: ${acc.server}`)
+  lines.push('')
+
+  lines.push(`💰 Preço de venda: R$ ${acc.sellPrice?.toFixed(2).replace('.', ',')}`)
+  lines.push('')
+
+  const skills = acc.skills ?? {}
+  const skillEntries = [
+    skills.ml        > 0 && `ML ${skills.ml}`,
+    skills.sword     > 0 && `Sword ${skills.sword}`,
+    skills.axe       > 0 && `Axe ${skills.axe}`,
+    skills.club      > 0 && `Club ${skills.club}`,
+    skills.dist      > 0 && `Dist ${skills.dist}`,
+    skills.shielding > 0 && `Shield ${skills.shielding}`,
+    skills.fist      > 0 && `Fist ${skills.fist}`,
+  ].filter(Boolean)
+  if (skillEntries.length) {
+    lines.push(`🎯 Skills: ${skillEntries.join(' | ')}`)
+  }
+
+  const prog = []
+  if (acc.charmPoints       > 0) prog.push(`Charm ${acc.charmPoints.toLocaleString('pt-BR')}`)
+  if (acc.bosstiaryPoints   > 0) prog.push(`Bosstiary ${acc.bosstiaryPoints.toLocaleString('pt-BR')}`)
+  if (acc.huntingTaskPoints > 0) prog.push(`Tasks ${acc.huntingTaskPoints.toLocaleString('pt-BR')}`)
+  if (acc.vipDays           > 0) prog.push(`VIP ${acc.vipDays} dias`)
+  if (acc.loyaltySkill      > 0) prog.push(`Loyalty ${acc.loyaltySkill}`)
+  if (prog.length) lines.push(`✨ Progresso: ${prog.join(' | ')}`)
+
+  if (skillEntries.length || prog.length) lines.push('')
+
+  if (acc.outfits?.length) {
+    lines.push(`👘 Outfits (${acc.outfits.length}): ${acc.outfits.join(', ')}`)
+  }
+  if (acc.mounts?.length) {
+    lines.push(`🐴 Montarias (${acc.mounts.length}): ${acc.mounts.join(', ')}`)
+  }
+  if (acc.notableItems?.length) {
+    lines.push(`🗡️  Itens notáveis: ${acc.notableItems.join(', ')}`)
+  }
+  if (acc.outfits?.length || acc.mounts?.length || acc.notableItems?.length) lines.push('')
+
+  if (acc.notes) {
+    lines.push(`📝 Obs: ${acc.notes}`)
+    lines.push('')
+  }
+
+  lines.push('📩 Entre em contato para mais informações!')
+  lines.push('')
+  lines.push('━━━━━━━━━━━━━━━━━━━━━━')
+  lines.push('🌐 MinhaLojaRubinot')
+  lines.push('minhalojarubinot.vercel.app')
+
+  return lines.join('\n')
+}
+
+function SalesTextModal({ acc, onClose }) {
+  const [copied, setCopied] = useState(false)
+  const text = useMemo(() => generateSalesText(acc), [acc])
+
+  useEffect(() => {
+    const fn = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', fn)
+    return () => window.removeEventListener('keydown', fn)
+  }, [onClose])
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16, backgroundColor: 'rgba(0,0,0,0.75)',
+      }}
+      onClick={e => { if (e.target === e.currentTarget) onClose() }}
+    >
+      <div style={{
+        width: '100%', maxWidth: 520, maxHeight: '90vh',
+        backgroundColor: '#1c1530',
+        border: '1px solid #7c3aed',
+        borderRadius: 20,
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 0 60px #3b076488',
+      }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #3a3050' }}>
+          <span style={{ fontWeight: 700, fontSize: 14, color: '#c084fc' }}>
+            📣 Texto de Anúncio — {acc.charName || `${acc.vocation} Lv${acc.level}`}
+          </span>
+          <button onClick={onClose}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, lineHeight: 1 }}
+          ><X size={18} /></button>
+        </div>
+
+        {/* Text area */}
+        <textarea
+          readOnly
+          value={text}
+          style={{
+            flex: 1, resize: 'none', padding: '16px 20px',
+            backgroundColor: '#0e0919', color: '#e5e7eb',
+            fontSize: 13, lineHeight: 1.7, fontFamily: 'monospace',
+            border: 'none', outline: 'none', overflowY: 'auto',
+            minHeight: 200,
+          }}
+        />
+
+        {/* Footer */}
+        <div style={{ padding: '12px 20px', borderTop: '1px solid #3a3050', display: 'flex', gap: 10 }}>
+          <button onClick={handleCopy}
+            style={{
+              flex: 1, padding: '9px 0', borderRadius: 10, fontWeight: 600, fontSize: 13,
+              cursor: 'pointer', border: 'none', transition: 'background 0.2s',
+              backgroundColor: copied ? '#14532d' : '#7c3aed',
+              color: copied ? '#4ade80' : '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            {copied ? <><Check size={14} /> Copiado!</> : <><Copy size={14} /> Copiar texto</>}
+          </button>
+          <button onClick={onClose}
+            style={{
+              padding: '9px 20px', borderRadius: 10, fontSize: 13, cursor: 'pointer',
+              backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#9ca3af',
+            }}
+          >Fechar</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce }) {
   const [outfitIdx, setOutfitIdx] = useState(0)
   const [pickerOpen, setPickerOpen] = useState(false)
   const profit = acc.sellPrice - acc.buyPrice
@@ -315,6 +461,10 @@ function AccountCard({ acc, onEdit, onDelete, onClone }) {
             className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-colors"
             style={{ backgroundColor: '#3b0764', border: '1px solid #6d28d9', color: '#c084fc' }}
           ><Pencil size={12} /> Editar</button>
+          <button onClick={onAnnounce} title="Gerar texto de anúncio"
+            className="py-1.5 px-3 rounded-lg text-xs transition-colors"
+            style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#f59e0b' }}
+          ><Megaphone size={12} /></button>
           <button onClick={onClone} title="Duplicar conta"
             className="py-1.5 px-3 rounded-lg text-xs transition-colors"
             style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#60a5fa' }}
@@ -342,6 +492,7 @@ export default function AccountsModule() {
   const { accounts, settings, addAccount, updateAccount, deleteAccount } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [announcing, setAnnouncing] = useState(null)
   const [filters, setFilters] = useState({ vocation: '', server: '', status: '' })
   const [search, setSearch] = useState('')
   const [sortVal, setSortVal] = useState('level-desc')
@@ -448,6 +599,7 @@ export default function AccountsModule() {
               acc={acc}
               onEdit={() => setEditing(acc)}
               onClone={() => handleClone(acc)}
+              onAnnounce={() => setAnnouncing(acc)}
               onDelete={() => { if (confirm(`Excluir conta ${acc.charName || acc.vocation + ' Lv' + acc.level}?`)) deleteAccount(acc.id) }}
             />
           ))}
@@ -473,6 +625,10 @@ export default function AccountsModule() {
             onClose={() => setEditing(null)}
           />
         </Modal>
+      )}
+
+      {announcing && (
+        <SalesTextModal acc={announcing} onClose={() => setAnnouncing(null)} />
       )}
     </div>
   )
