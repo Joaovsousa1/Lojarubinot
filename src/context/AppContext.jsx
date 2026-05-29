@@ -139,13 +139,13 @@ export function AppProvider({ children }) {
       pricePerK: row.price_per_k,
       totalPaid: row.total_paid,
       totalReceived: row.total_received,
-      profit: row.profit, user_id: row.user_id,
+      profit: row.profit,
     }
   }
 
   function coinToDb(coin) {
     return {
-      id: coin.id, user_id: coin.user_id ?? user?.id,
+      id: coin.id, user_id: user?.id,
       type: coin.type, date: coin.date, quantity: coin.quantity,
       server: coin.server, observation: coin.observation,
       package_type: coin.packageType,
@@ -173,6 +173,7 @@ export function AppProvider({ children }) {
 
   // ── Coins ──────────────────────────────────────────────────────────────────
   const addCoinTransaction = async (tx) => {
+    if (!user?.id) return
     const id = generateId()
     const row = { ...tx, id, user_id: user.id }
     setCoins(prev => [row, ...prev])
