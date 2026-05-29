@@ -72,68 +72,87 @@ function SkillRow({ skills = {} }) {
   )
 }
 
+function fmt(n) { return (n ?? 0).toLocaleString('pt-BR') }
+
 function generateSalesText(acc) {
-  const lines = []
-
-  lines.push('🔥 CONTA À VENDA 🔥')
-  lines.push('')
-
-  if (acc.charName) lines.push(`👤 Personagem: ${acc.charName}`)
-  lines.push(`⚔️  Vocação: ${acc.vocation}`)
-  lines.push(`📊 Level: ${acc.level}`)
-  if (acc.server) lines.push(`🌍 Servidor: ${acc.server}`)
-  lines.push('')
-
-  lines.push(`💰 Preço de venda: R$ ${acc.sellPrice?.toFixed(2).replace('.', ',')}`)
-  lines.push('')
+  const L = []
+  const add = (s = '') => L.push(s)
 
   const skills = acc.skills ?? {}
-  const skillEntries = [
-    skills.ml        > 0 && `ML ${skills.ml}`,
-    skills.sword     > 0 && `Sword ${skills.sword}`,
-    skills.axe       > 0 && `Axe ${skills.axe}`,
-    skills.club      > 0 && `Club ${skills.club}`,
-    skills.dist      > 0 && `Dist ${skills.dist}`,
-    skills.shielding > 0 && `Shield ${skills.shielding}`,
-    skills.fist      > 0 && `Fist ${skills.fist}`,
-  ].filter(Boolean)
-  if (skillEntries.length) {
-    lines.push(`🎯 Skills: ${skillEntries.join(' | ')}`)
+
+  // ── Cabeçalho ──────────────────────────────────────────────────────────────
+  add(`💥 Level ${acc.level}`)
+
+  if (skills.ml > 0) {
+    const loyalty = acc.loyaltySkill > 0 ? ` + ${acc.loyaltySkill} Loyalty` : ''
+    add(`✨ Magic Level ${skills.ml}${loyalty}`)
+  } else {
+    const combatSkills = [
+      skills.sword > 0 && `Sword ${skills.sword}`,
+      skills.axe   > 0 && `Axe ${skills.axe}`,
+      skills.club  > 0 && `Club ${skills.club}`,
+      skills.dist  > 0 && `Dist ${skills.dist}`,
+      skills.fist  > 0 && `Fist ${skills.fist}`,
+    ].filter(Boolean)
+    if (combatSkills.length) add(`✨ ${combatSkills.join(' | ')}${acc.loyaltySkill > 0 ? ` + ${acc.loyaltySkill} Loyalty` : ''}`)
+    else if (acc.loyaltySkill > 0) add(`✨ Loyalty ${acc.loyaltySkill}`)
   }
 
-  const prog = []
-  if (acc.charmPoints       > 0) prog.push(`Charm ${acc.charmPoints.toLocaleString('pt-BR')}`)
-  if (acc.bosstiaryPoints   > 0) prog.push(`Bosstiary ${acc.bosstiaryPoints.toLocaleString('pt-BR')}`)
-  if (acc.huntingTaskPoints > 0) prog.push(`Tasks ${acc.huntingTaskPoints.toLocaleString('pt-BR')}`)
-  if (acc.vipDays           > 0) prog.push(`VIP ${acc.vipDays} dias`)
-  if (acc.loyaltySkill      > 0) prog.push(`Loyalty ${acc.loyaltySkill}`)
-  if (prog.length) lines.push(`✨ Progresso: ${prog.join(' | ')}`)
+  if (skills.shielding > 0) add(`🛡️ Shielding ${skills.shielding}`)
 
-  if (skillEntries.length || prog.length) lines.push('')
+  if (acc.vipDays > 0) {
+    add(`⏳ ${fmt(acc.vipDays)} dias de VIP`)
+  }
 
+  add()
+  if (acc.server) add(`🌍 Servidor: ${acc.server}`)
+  if (acc.vocation) add(`⚔️  Vocação: ${acc.vocation}`)
+  if (acc.charName) add(`👤 Personagem: ${acc.charName}`)
+  add()
+
+  // ── Set / Itens notáveis ────────────────────────────────────────────────────
+  if (acc.notableItems?.length) {
+    add('🎒 Set e itens que acompanham a ACC:')
+    acc.notableItems.forEach(it => add(`🩸 ${it}`))
+    add()
+  }
+
+  // ── Outfits e montarias ─────────────────────────────────────────────────────
   if (acc.outfits?.length) {
-    lines.push(`👘 Outfits (${acc.outfits.length}): ${acc.outfits.join(', ')}`)
+    add(`👕 Outfits (${acc.outfits.length}): ${acc.outfits.join(', ')}`)
   }
   if (acc.mounts?.length) {
-    lines.push(`🐴 Montarias (${acc.mounts.length}): ${acc.mounts.join(', ')}`)
+    add(`🐴 Montarias (${acc.mounts.length}): ${acc.mounts.join(', ')}`)
   }
-  if (acc.notableItems?.length) {
-    lines.push(`🗡️  Itens notáveis: ${acc.notableItems.join(', ')}`)
-  }
-  if (acc.outfits?.length || acc.mounts?.length || acc.notableItems?.length) lines.push('')
+  if (acc.outfits?.length || acc.mounts?.length) add()
 
+  // ── Diferenciais (campo Observações → texto livre do usuário) ───────────────
   if (acc.notes) {
-    lines.push(`📝 Obs: ${acc.notes}`)
-    lines.push('')
+    add('🌟 Diferenciais do char:')
+    add()
+    acc.notes.split('\n').forEach(line => add(line))
+    add()
   }
 
-  lines.push('📩 Entre em contato para mais informações!')
-  lines.push('')
-  lines.push('━━━━━━━━━━━━━━━━━━━━━━')
-  lines.push('🌐 MinhaLojaRubinot')
-  lines.push('minhalojarubinot.vercel.app')
+  // ── Progresso ───────────────────────────────────────────────────────────────
+  const hasProgress = acc.charmPoints > 0 || acc.bosstiaryPoints > 0 || acc.huntingTaskPoints > 0
+  if (hasProgress) {
+    if (acc.charmPoints       > 0) add(`🧠 ${fmt(acc.charmPoints)} Charm Points`)
+    if (acc.bosstiaryPoints   > 0) add(`⚔️  ${fmt(acc.bosstiaryPoints)} Boss Points`)
+    if (acc.huntingTaskPoints > 0) add(`🏆 ${fmt(acc.huntingTaskPoints)} Hunting Task Points`)
+    add()
+  }
 
-  return lines.join('\n')
+  // ── Preço e contato ─────────────────────────────────────────────────────────
+  add(`💰 Valor: R$ ${(acc.sellPrice ?? 0).toFixed(2).replace('.', ',')}`)
+  add()
+  add('📩 Entre em contato para mais informações!')
+  add()
+  add('━━━━━━━━━━━━━━━━━━━━━━')
+  add('🌐 MinhaLojaRubinot')
+  add('minhalojarubinot.vercel.app')
+
+  return L.join('\n')
 }
 
 function SalesTextModal({ acc, onClose }) {
