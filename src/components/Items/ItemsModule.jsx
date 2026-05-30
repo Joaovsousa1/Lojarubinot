@@ -153,7 +153,7 @@ function ItemCard({ it, onEdit, onDelete, onSell, onHistory, onClone }) {
 }
 
 export default function ItemsModule() {
-  const { items, settings, addItem, updateItem, deleteItem, sellItem } = useApp()
+  const { items, settings, addItem, updateItem, deleteItem, sellItem, addCoinTransaction } = useApp()
   const [showForm,    _setShowForm]   = useState(() => sessionStorage.getItem('items_modal') === '1')
   const setShowForm = (v) => { v ? sessionStorage.setItem('items_modal','1') : sessionStorage.removeItem('items_modal'); _setShowForm(v) }
   const [editing,     setEditing]     = useState(null)
@@ -446,7 +446,22 @@ export default function ItemsModule() {
       {showForm && (
         <Modal title="Adicionar item" onClose={() => setShowForm(false)} wide>
           <ItemForm servers={settings.servers}
-            onSubmit={(data) => { addItem(data); setShowForm(false) }}
+            onSubmit={(data) => {
+              addItem(data)
+              if (data.syncCoins && (data.buyPriceRC || 0) > 0) {
+                addCoinTransaction({
+                  type: 'saida',
+                  date: new Date().toISOString(),
+                  quantity: data.buyPriceRC * (data.quantity || 1),
+                  server: data.server,
+                  observation: `Compra: ${data.name}`,
+                  pricePerK: 0,
+                  totalReceived: 0,
+                  profit: 0,
+                })
+              }
+              setShowForm(false)
+            }}
             onClose={() => setShowForm(false)} />
         </Modal>
       )}
@@ -459,7 +474,21 @@ export default function ItemsModule() {
       )}
       {selling && (
         <ItemSaleModal item={selling}
-          onConfirm={(sale) => { sellItem(selling.id, sale); setSelling(null) }}
+          onConfirm={(sale) => {
+            sellItem(selling.id, sale)
+            if (sale.syncCoins && (sale.soldForRC || 0) > 0) {
+              addCoinTransaction({
+                type: 'entrada',
+                date: new Date().toISOString(),
+                quantity: sale.soldForRC,
+                server: selling.server,
+                observation: `Venda: ${selling.name}${sale.quantity > 1 ? ` (x${sale.quantity})` : ''}`,
+                pricePerK: 0,
+                totalPaid: 0,
+              })
+            }
+            setSelling(null)
+          }}
           onClose={() => setSelling(null)} />
       )}
       {showHistory && (

@@ -11,6 +11,7 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
   const [soldForRC,  setSoldForRC]  = useState(item.sellPriceRC  || '')
   const [soldForPIX, setSoldForPIX] = useState(item.sellPricePIX || '')
   const [obs, setObs] = useState('')
+  const [syncCoins, setSyncCoins] = useState(true)
 
   const q = parseInt(qty) || 1
   const rc  = parseFloat(soldForRC)  || 0
@@ -28,6 +29,7 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
       soldForPIX: pix,
       observation: obs,
       date: new Date().toISOString(),
+      syncCoins,
     })
   }
 
@@ -92,6 +94,16 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
             </div>
           )}
         </div>
+
+        {rc > 0 && (
+          <label className="flex items-center gap-2 cursor-pointer select-none" style={{ fontSize: 13 }}>
+            <input type="checkbox" checked={syncCoins} onChange={e => setSyncCoins(e.target.checked)}
+              style={{ accentColor: '#7c3aed', width: 15, height: 15 }} />
+            <span style={{ color: '#c4b5fd' }}>
+              📥 Adicionar <strong>{Math.round(rc)} RC</strong> ao estoque de coins
+            </span>
+          </label>
+        )}
 
         <div>
           <label className={LABEL}>Observação</label>

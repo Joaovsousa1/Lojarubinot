@@ -13,7 +13,7 @@ const EMPTY = {
   server: '', quantity: 1,
   buyPriceRC: '', buyPricePIX: '',
   sellPriceRC: '', sellPricePIX: '',
-  category: 'arma', observation: '',
+  category: 'arma', observation: '', syncCoins: true,
 }
 
 const DRAFT_KEY = 'items_form_draft'
@@ -196,7 +196,7 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
         <div>
           <label className={LABEL}>Classificação</label>
           <select className={INPUT} style={INPUT_STYLE} value={form.classification}
-            onChange={e => { const c = parseInt(e.target.value); setForm(f => ({ ...f, classification: c, maxTier: c, tier: Math.min(f.tier, c) })) }}>
+            onChange={e => { const c = parseInt(e.target.value); setFormRaw(f => { const next = { ...f, classification: c, maxTier: c, tier: Math.min(f.tier, c) }; if (!initial) saveDraft(next); return next }) }}>
             <option value={3}>Classe 3</option>
             <option value={4}>Classe 4</option>
           </select>
@@ -235,6 +235,7 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
       </div>
 
       {/* Preços */}
+
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <PriceCard type="buy"
@@ -253,6 +254,16 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
           </div>
         )}
       </div>
+
+      {bRC > 0 && (
+        <label className="flex items-center gap-2 cursor-pointer select-none" style={{ fontSize: 13 }}>
+          <input type="checkbox" checked={form.syncCoins} onChange={e => set('syncCoins', e.target.checked)}
+            style={{ accentColor: '#7c3aed', width: 15, height: 15 }} />
+          <span style={{ color: '#c4b5fd' }}>
+            📤 Descontar <strong>{Math.round(bRC * (parseInt(form.quantity) || 1))} RC</strong> do estoque de coins
+          </span>
+        </label>
+      )}
 
       <div>
         <label className={LABEL}>Observação</label>
