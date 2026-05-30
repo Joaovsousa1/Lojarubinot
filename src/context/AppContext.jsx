@@ -14,7 +14,8 @@ const DEFAULT_SETTINGS = {
   ],
   coinPrices: { buy1k: 87, buy10k: 87, sell: 92 },
   minCoinBalance: 10000,
-  rcRate: 0.087,   // R$ por 1 RC — padrão: 1000 RC = R$ 87
+  rcRate: 0.087,
+  loyaltyAccounts: [],
 }
 
 export function AppProvider({ children }) {
@@ -320,6 +321,21 @@ export function AppProvider({ children }) {
     }
   }
 
+  // ── Loyalty Accounts ──────────────────────────────────────────────────────
+  const addLoyaltyAccount = (acc) => {
+    const newAcc = { ...acc, id: generateId(), dateEntry: new Date().toISOString() }
+    updateSettings({ loyaltyAccounts: [...(settings.loyaltyAccounts ?? []), newAcc] })
+  }
+
+  const updateLoyaltyAccount = (id, updates) => {
+    const updated = (settings.loyaltyAccounts ?? []).map(a => a.id === id ? { ...a, ...updates } : a)
+    updateSettings({ loyaltyAccounts: updated })
+  }
+
+  const deleteLoyaltyAccount = (id) => {
+    updateSettings({ loyaltyAccounts: (settings.loyaltyAccounts ?? []).filter(a => a.id !== id) })
+  }
+
   // ── Settings ───────────────────────────────────────────────────────────────
   const updateSettings = async (updates) => {
     const backup = settings
@@ -398,6 +414,7 @@ export function AppProvider({ children }) {
       addCoinTransaction, deleteCoinTransaction,
       addItem, updateItem, deleteItem, sellItem,
       addAccount, updateAccount, deleteAccount,
+      addLoyaltyAccount, updateLoyaltyAccount, deleteLoyaltyAccount,
       updateSettings, addServer, removeServer,
       exportData, importData,
       setCoins, setItems, setAccounts,

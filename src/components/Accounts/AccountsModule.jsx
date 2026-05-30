@@ -6,6 +6,7 @@ import { OUTFITS_DATABASE } from '../../data/outfitsDatabase'
 import { MOUNTS_DATABASE } from '../../data/mountsDatabase'
 import Modal from '../UI/Modal'
 import AccountForm from './AccountForm'
+import LoyaltyModule from './LoyaltyModule'
 
 const OUTFIT_URL = Object.fromEntries(OUTFITS_DATABASE.map(o => [o.name, o.imageUrl]))
 const MOUNT_URL  = Object.fromEntries(
@@ -654,6 +655,7 @@ const SORT_OPTIONS = [
 
 export default function AccountsModule() {
   const { accounts, settings, addAccount, updateAccount, deleteAccount } = useApp()
+  const [activeTab, setActiveTab] = useState('contas')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [announcing, setAnnouncing] = useState(null)
@@ -713,13 +715,37 @@ export default function AccountsModule() {
 
   return (
     <div className="p-6 space-y-5">
+      {/* Page title */}
+      <h1 className="text-2xl font-bold text-white">Contas</h1>
+
+      {/* Tab switcher */}
+      <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', width: 'fit-content' }}>
+        {[
+          { id: 'contas',  label: 'Contas' },
+          { id: 'loyalty', label: '⭐ Loyalty' },
+        ].map(tab => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className="px-4 py-1.5 rounded-lg text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: activeTab === tab.id ? '#7c3aed' : 'transparent',
+              color: activeTab === tab.id ? '#fff' : '#6b7280',
+            }}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Loyalty tab */}
+      {activeTab === 'loyalty' && <LoyaltyModule />}
+
+      {/* Contas tab content below */}
+      {activeTab === 'contas' && <>
+
+      {/* Stats + add button */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Contas</h1>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {stats.available} disponíveis · {stats.negotiating} em negociação · {stats.sold} vendidas · lucro total {formatCurrency(stats.totalProfit)}
-          </p>
-        </div>
+        <p className="text-xs text-gray-500">
+          {stats.available} disponíveis · {stats.negotiating} em negociação · {stats.sold} vendidas · lucro total {formatCurrency(stats.totalProfit)}
+        </p>
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white"
           style={{ backgroundColor: '#7c3aed' }}
@@ -811,6 +837,8 @@ export default function AccountsModule() {
           }}
         />
       )}
+
+      </>}
     </div>
   )
 }
