@@ -54,6 +54,7 @@ export const VOCATION_COLORS = {
   Knight: '#3b82f6',
   Paladin: '#f59e0b',
   Sorcerer: '#a855f7',
+  Druid: '#0d9488',
   Monk: '#22c55e',
 }
 
@@ -62,6 +63,7 @@ export const VOCATION_OUTFIT = {
   Knight:   W + 'Outfit_Knight_Male_Addon_3.gif',
   Paladin:  W + 'Outfit_Paladin_Male_Addon_3.gif',
   Sorcerer: W + 'Outfit_Master_Sorcerer_Male_Addon_3.gif',
+  Druid:    W + 'Outfit_Druid_Male_Addon_3.gif',
   Monk:     W + 'Outfit_Druid_Male_Addon_3.gif',
 }
 
@@ -69,6 +71,7 @@ export const VOCATION_BG = {
   Knight:   'linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%)',
   Paladin:  'linear-gradient(135deg, #78350f 0%, #0f172a 100%)',
   Sorcerer: 'linear-gradient(135deg, #3b0764 0%, #0f172a 100%)',
+  Druid:    'linear-gradient(135deg, #134e4a 0%, #0f172a 100%)',
   Monk:     'linear-gradient(135deg, #14532d 0%, #0f172a 100%)',
 }
 

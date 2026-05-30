@@ -12,7 +12,7 @@ const MOUNT_URL  = Object.fromEntries(
   MOUNTS_DATABASE.filter((m, i, a) => a.findIndex(x => x.name === m.name) === i).map(m => [m.name, m.imageUrl])
 )
 
-const VOCATIONS = ['Knight', 'Paladin', 'Sorcerer', 'Monk']
+const VOCATIONS = ['Knight', 'Paladin', 'Sorcerer', 'Druid', 'Monk']
 const STATUSES  = ['disponível', 'reservada', 'em negociação', 'vendida']
 
 function VocBadge({ vocation }) {

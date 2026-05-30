@@ -22,7 +22,7 @@ function Hint({ children }) {
   )
 }
 
-const VOCATIONS = ['Knight', 'Paladin', 'Sorcerer', 'Monk']
+const VOCATIONS = ['Knight', 'Paladin', 'Sorcerer', 'Druid', 'Monk']
 const STATUSES  = ['disponível', 'reservada', 'em negociação', 'vendida']
 
 const EMPTY_SKILLS = { ml: '', sword: '', axe: '', dist: '', fist: '', club: '', shielding: '' }
