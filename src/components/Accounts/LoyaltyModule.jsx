@@ -11,7 +11,7 @@ const LABEL = 'block text-xs text-gray-400 mb-1'
 const STATUSES = ['disponível', 'reservada', 'em negociação', 'vendida']
 
 const EMPTY = {
-  email: '', server: '', vipDays: '', loyaltyPoints: '',
+  email: '', server: 'Todos', vipDays: '', loyaltyPoints: '',
   buyPrice: '', sellPrice: '', status: 'disponível', notes: '',
 }
 
@@ -56,8 +56,9 @@ function LoyaltyForm({ initial, servers, onSubmit, onClose }) {
 
       {/* Server */}
       <div>
-        <label className={LABEL}>Servidor</label>
+        <label className={LABEL}>Servidor <span style={{ color: '#4b5563', fontWeight: 400 }}>— opcional</span></label>
         <select className={INPUT} style={INPUT_STYLE} value={form.server} onChange={e => set('server', e.target.value)}>
+          <option value="Todos">Todos os servidores</option>
           {servers.map(s => <option key={s}>{s}</option>)}
         </select>
       </div>
@@ -156,7 +157,9 @@ function LoyaltyCard({ acc, onEdit, onDelete }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="text-white font-bold text-sm truncate" title={acc.email}>{emailMasked}</div>
-          <div className="text-gray-500 text-xs mt-0.5">{acc.server}</div>
+          {acc.server && acc.server !== 'Todos' && (
+            <div className="text-gray-500 text-xs mt-0.5">{acc.server}</div>
+          )}
         </div>
         <StatusBadge status={acc.status} />
       </div>
