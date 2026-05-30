@@ -31,7 +31,7 @@ function GemIcon({ size = 28 }) {
 }
 
 export default function Sidebar() {
-  const { activeModule, setActiveModule, coins, items, accounts, settings } = useApp()
+  const { activeModule, setActiveModule, accountsTab, setAccountsTab, coins, items, accounts, settings } = useApp()
   const { profile } = useAuth()
 
   const totalCoins   = coins.reduce((s, c) => c.type === 'entrada' ? s + c.quantity : s - c.quantity, 0)
@@ -55,7 +55,9 @@ export default function Sidebar() {
       items: [
         { id: 'coins',    label: 'Coins',         Icon: Coins,           badge: fmtCoins,        alert: lowCoins },
         { id: 'items',    label: 'Itens',         Icon: Package,         badge: itemsInStock || null, alert: false },
-        { id: 'accounts', label: 'Contas',        Icon: Users,           badge: accAvailable || null, alert: false },
+        { id: 'accounts', label: 'Contas',        Icon: Users,           badge: accAvailable || null, alert: false, subItems: [
+          { id: 'loyalty', label: '⭐ Loyalty' },
+        ]},
       ]
     },
     {
@@ -106,49 +108,73 @@ export default function Sidebar() {
               </div>
             )}
             <div className="space-y-0.5">
-              {group.items.map(({ id, label, Icon, badge, alert }) => {
+              {group.items.map(({ id, label, Icon, badge, alert, subItems }) => {
                 const active = activeModule === id
                 return (
-                  <button
-                    key={id}
-                    onClick={() => setActiveModule(id)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 relative overflow-hidden"
-                    style={{
-                      backgroundColor: active ? 'rgba(124,58,237,0.22)' : 'transparent',
-                      color: active ? '#e9d5ff' : '#6b7280',
-                      boxShadow: active ? 'inset 0 0 0 1px rgba(124,58,237,0.35)' : 'none',
-                    }}
-                    onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#d1d5db' } }}
-                    onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6b7280' } }}
-                  >
-                    {/* active left accent */}
-                    {active && (
-                      <div style={{
-                        position: 'absolute', left: 0, top: '15%', bottom: '15%',
-                        width: 3, borderRadius: '0 3px 3px 0',
-                        background: 'linear-gradient(180deg, #e879f9, #7c3aed)',
-                        boxShadow: '0 0 8px #7c3aed',
-                      }} />
-                    )}
-                    <Icon size={17} style={{ color: active ? '#c084fc' : 'inherit', flexShrink: 0 }} />
-                    {label}
-                    {badge && (
-                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: alert ? '#7f1d1d' : 'rgba(124,58,237,0.3)',
-                          color: alert ? '#f87171' : '#c084fc',
-                          border: alert ? '1px solid #dc262655' : '1px solid rgba(124,58,237,0.4)',
-                        }}>
-                        {badge}
-                      </span>
-                    )}
-                    {!badge && alert && (
-                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
-                        style={{ backgroundColor: '#7f1d1d', color: '#f87171', border: '1px solid #dc262655' }}>
-                        !
-                      </span>
-                    )}
-                  </button>
+                  <div key={id}>
+                    <button
+                      onClick={() => { setActiveModule(id); if (id === 'accounts') setAccountsTab('contas') }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 relative overflow-hidden"
+                      style={{
+                        backgroundColor: active ? 'rgba(124,58,237,0.22)' : 'transparent',
+                        color: active ? '#e9d5ff' : '#6b7280',
+                        boxShadow: active ? 'inset 0 0 0 1px rgba(124,58,237,0.35)' : 'none',
+                      }}
+                      onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#d1d5db' } }}
+                      onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#6b7280' } }}
+                    >
+                      {active && (
+                        <div style={{
+                          position: 'absolute', left: 0, top: '15%', bottom: '15%',
+                          width: 3, borderRadius: '0 3px 3px 0',
+                          background: 'linear-gradient(180deg, #e879f9, #7c3aed)',
+                          boxShadow: '0 0 8px #7c3aed',
+                        }} />
+                      )}
+                      <Icon size={17} style={{ color: active ? '#c084fc' : 'inherit', flexShrink: 0 }} />
+                      {label}
+                      {badge && (
+                        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{
+                            backgroundColor: alert ? '#7f1d1d' : 'rgba(124,58,237,0.3)',
+                            color: alert ? '#f87171' : '#c084fc',
+                            border: alert ? '1px solid #dc262655' : '1px solid rgba(124,58,237,0.4)',
+                          }}>
+                          {badge}
+                        </span>
+                      )}
+                      {!badge && alert && (
+                        <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{ backgroundColor: '#7f1d1d', color: '#f87171', border: '1px solid #dc262655' }}>
+                          !
+                        </span>
+                      )}
+                    </button>
+
+                    {/* Sub-items */}
+                    {subItems && subItems.map(sub => {
+                      const subActive = active && accountsTab === sub.id
+                      return (
+                        <button
+                          key={sub.id}
+                          onClick={() => { setActiveModule(id); setAccountsTab(sub.id) }}
+                          className="w-full flex items-center gap-2 rounded-lg transition-all duration-150"
+                          style={{
+                            padding: '4px 10px 4px 36px',
+                            backgroundColor: subActive ? 'rgba(124,58,237,0.15)' : 'transparent',
+                            color: subActive ? '#c084fc' : '#4b5563',
+                            fontSize: 11,
+                            fontWeight: subActive ? 700 : 500,
+                          }}
+                          onMouseEnter={e => { if (!subActive) { e.currentTarget.style.color = '#9ca3af' } }}
+                          onMouseLeave={e => { if (!subActive) { e.currentTarget.style.color = '#4b5563' } }}
+                        >
+                          <span style={{ opacity: 0.5, fontSize: 9 }}>▸</span>
+                          {sub.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 )
               })}
             </div>

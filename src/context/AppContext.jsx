@@ -32,6 +32,13 @@ export function AppProvider({ children }) {
     sessionStorage.setItem('rubinot_module', mod)
     setActiveModule(mod)
   }, [])
+  const [accountsTab, setAccountsTabRaw] = useState(
+    () => sessionStorage.getItem('rubinot_accounts_tab') ?? 'contas'
+  )
+  const setAccountsTab = useCallback((tab) => {
+    sessionStorage.setItem('rubinot_accounts_tab', tab)
+    setAccountsTabRaw(tab)
+  }, [])
   const [dataLoaded, setDataLoaded] = useState(false)
   const [toasts, setToasts]     = useState([])
   const loadIdRef   = useRef(0)   // race condition guard
@@ -409,7 +416,7 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      coins, items, accounts, settings, activeModule, setActiveModule: setActiveModulePersist, dataLoaded,
+      coins, items, accounts, settings, activeModule, setActiveModule: setActiveModulePersist, accountsTab, setAccountsTab, dataLoaded,
       toasts, removeToast,
       addCoinTransaction, deleteCoinTransaction,
       addItem, updateItem, deleteItem, sellItem,

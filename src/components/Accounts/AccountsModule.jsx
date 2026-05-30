@@ -654,8 +654,9 @@ const SORT_OPTIONS = [
 ]
 
 export default function AccountsModule() {
-  const { accounts, settings, addAccount, updateAccount, deleteAccount } = useApp()
-  const [activeTab, setActiveTab] = useState('contas')
+  const { accounts, settings, addAccount, updateAccount, deleteAccount, accountsTab, setAccountsTab } = useApp()
+  const activeTab = accountsTab
+  const setActiveTab = setAccountsTab
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [announcing, setAnnouncing] = useState(null)
