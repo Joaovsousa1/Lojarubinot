@@ -49,7 +49,7 @@ function LoyaltyForm({ initial, servers, onSubmit, onClose }) {
       {/* Email */}
       <div>
         <label className={LABEL}>E-mail da conta <span style={{ color: '#ef4444' }}>*</span></label>
-        <input type="email" required className={INPUT} style={INPUT_STYLE}
+        <input type="text" required className={INPUT} style={INPUT_STYLE}
           value={form.email} onChange={e => set('email', e.target.value)}
           placeholder="exemplo@email.com" />
       </div>
