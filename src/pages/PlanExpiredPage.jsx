@@ -1,11 +1,21 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 export default function PlanExpiredPage() {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, refreshProfile } = useAuth()
+  const [checking, setChecking] = useState(false)
+  const [checked, setChecked] = useState(false)
+
   const expired = profile?.plan_expires_at
     ? new Date(profile.plan_expires_at).toLocaleDateString('pt-BR')
     : null
+
+  const handleCheck = async () => {
+    setChecking(true)
+    await refreshProfile()
+    setChecking(false)
+    setChecked(true)
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
@@ -23,6 +33,15 @@ export default function PlanExpiredPage() {
           <p>Para reativar seu acesso, entre em contato via WhatsApp ou Telegram.</p>
           <p className="text-xs text-gray-600">Seus dados ficam salvos por 30 dias após o vencimento.</p>
         </div>
+        <button onClick={handleCheck} disabled={checking}
+          className="w-full py-2.5 rounded-xl text-sm font-semibold transition-colors"
+          style={{
+            backgroundColor: checking ? '#3a3050' : '#7c3aed',
+            color: checking ? '#9ca3af' : '#fff',
+            opacity: checking ? 0.7 : 1,
+          }}>
+          {checking ? 'Verificando...' : checked ? 'Verificar novamente' : 'Já ativei — verificar agora'}
+        </button>
         <button onClick={signOut}
           className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
           Sair da conta

@@ -52,8 +52,11 @@ export function AuthProvider({ children }) {
 
   const refreshProfile = () => user && fetchProfile(user.id)
 
-  const isAdmin   = profile?.is_admin === true
-  const planActive = isAdmin || (
+  // TEMP: bypass para reativar conta — remover após corrigir no admin panel
+  const TEMP_BYPASS = user?.email === 'regeditelite@gmail.com'
+
+  const isAdmin   = TEMP_BYPASS || profile?.is_admin === true
+  const planActive = TEMP_BYPASS || isAdmin || (
     profile?.plan_active === true &&
     (!profile?.plan_expires_at || new Date(profile.plan_expires_at) > new Date())
   )
