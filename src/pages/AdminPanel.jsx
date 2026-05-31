@@ -35,9 +35,25 @@ export default function AdminPanel() {
   const [newExpiry, setNewExpiry] = useState('')
   const [saving, setSaving] = useState(false)
   const [search, setSearch] = useState('')
-  const [tab, setTab] = useState('users') // 'users' | 'metrics'
+  const [tab, setTab] = useState('users')
   const [paymentLog, setPaymentLog] = useState([])
   const [newPayment, setNewPayment] = useState({ userId: '', amount: '', note: '' })
+  const [activatingSelf, setActivatingSelf] = useState(false)
+  const [selfActivated, setSelfActivated] = useState(false)
+
+  const activateSelf = async () => {
+    if (!user?.id) return
+    setActivatingSelf(true)
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      email: user.email,
+      plan_active: true,
+      plan_expires_at: null,
+    })
+    setActivatingSelf(false)
+    setSelfActivated(true)
+    loadData()
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -128,10 +144,19 @@ export default function AdminPanel() {
           </h1>
           <p className="text-xs text-gray-600 mt-0.5">Painel administrativo</p>
         </div>
-        <div className="text-right">
+        <div className="text-right space-y-1">
           <div className="text-xs text-gray-500">Logado como</div>
           <div className="text-xs font-medium" style={{ color: '#c084fc' }}>{user?.email}</div>
-          <button onClick={signOut} className="text-xs text-gray-600 hover:text-gray-400 transition-colors mt-1">
+          <button onClick={activateSelf} disabled={activatingSelf || selfActivated}
+            className="block w-full text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
+            style={{
+              backgroundColor: selfActivated ? '#14532d33' : '#7c3aed',
+              color: selfActivated ? '#4ade80' : '#fff',
+              opacity: activatingSelf ? 0.7 : 1,
+            }}>
+            {selfActivated ? '✓ Plano ativado!' : activatingSelf ? 'Ativando...' : '⚡ Ativar meu plano'}
+          </button>
+          <button onClick={signOut} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
             Sair
           </button>
         </div>
