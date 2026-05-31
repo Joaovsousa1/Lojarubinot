@@ -12,8 +12,8 @@ function CoinForm({ type, onClose }) {
   const isEntrada = type === 'entrada'
   const [form, setForm] = useState({
     quantity: '',
-    packageType: '10k',
-    pricePerK: isEntrada ? settings.coinPrices.buy10k : settings.coinPrices.sell,
+    packageType: '1k',
+    pricePerK: isEntrada ? settings.coinPrices.buy1k : settings.coinPrices.sell,
     server: 'Todos',
     observation: '',
   })
