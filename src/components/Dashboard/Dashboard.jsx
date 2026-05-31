@@ -156,6 +156,7 @@ function AccountRow({ account: a }) {
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { coins, items, accounts, settings, setActiveModule } = useApp()
+  const loyaltyAccounts = settings.loyaltyAccounts ?? []
   const { profile } = useAuth()
   const cur = getCurrentMonth()
 
@@ -176,10 +177,13 @@ export default function Dashboard() {
   const itemsProfitRC  = 0
   const itemsProfitPIX = monthSales.reduce((s, x) => s + realSaleProfit(x, rate), 0)
 
-  // Accounts
-  const accAvailable = accounts.filter(a => a.status === 'disponível').length
-  const accSoldMonth = accounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(cur))
-  const accProfitPIX = accSoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
+  // Accounts (regular + loyalty)
+  const accAvailable    = accounts.filter(a => a.status === 'disponível').length
+                        + loyaltyAccounts.filter(a => a.status === 'disponível').length
+  const accSoldMonth    = accounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(cur))
+  const loyaltySoldMonth = loyaltyAccounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(cur))
+  const accProfitPIX    = accSoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
+                        + loyaltySoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
 
   // Totals
   const totalPIX = coinsProfitPIX + itemsProfitPIX + accProfitPIX
@@ -192,6 +196,7 @@ export default function Dashboard() {
     const sale = items.flatMap(i => i.sales ?? []).filter(s => s.date?.startsWith(key))
     const ip   = sale.reduce((s, x) => s + realSaleProfit(x, rate), 0)
     const ap   = accounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
+             + loyaltyAccounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
     return { label, Coins: +cp.toFixed(2), Itens: +ip.toFixed(2), Contas: +ap.toFixed(2), Total: +(cp+ip+ap).toFixed(2) }
   })
 
@@ -289,7 +294,7 @@ export default function Dashboard() {
         <StatCard
           icon={Users} color="#22c55e" title="Contas — lucro do mês"
           main={formatCurrency(accProfitPIX)}
-          sub={`${accAvailable} disponíveis · ${accSoldMonth.length} vendidas`}
+          sub={`${accAvailable} disponíveis · ${accSoldMonth.length + loyaltySoldMonth.length} vendidas`}
         />
       </div>
 

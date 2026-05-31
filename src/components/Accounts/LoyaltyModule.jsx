@@ -38,6 +38,9 @@ function LoyaltyForm({ initial, servers, onSubmit, onClose }) {
       loyaltyPoints: parseInt(form.loyaltyPoints) || 0,
       buyPrice:      parseFloat(form.buyPrice)    || 0,
       sellPrice:     parseFloat(form.sellPrice)   || 0,
+      dateSold: form.status === 'vendida'
+        ? (initial?.dateSold ?? new Date().toISOString())
+        : null,
     })
   }
 
