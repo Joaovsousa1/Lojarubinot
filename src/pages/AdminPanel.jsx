@@ -56,38 +56,26 @@ export default function AdminPanel() {
     if (!user?.id) return
     setActivatingSelf(true)
     setSelfError('')
-    // Try update first (row may already exist)
-    const { error: updateErr, count } = await supabase
-      .from('profiles')
-      .update({ plan_active: true, plan_expires_at: null })
-      .eq('id', user.id)
-      .select('id')
-    if (updateErr) {
-      setSelfError(`Update falhou: ${updateErr.message}`)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Sem sessão ativa')
+
+      const res = await fetch('/api/activate-plan', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error ?? 'Erro desconhecido')
+
+      setSelfActivated(true)
+      loadMyProfile()
+      loadData()
+    } catch (e) {
+      setSelfError(e.message)
+    } finally {
       setActivatingSelf(false)
-      return
     }
-    // If no row was updated, try insert
-    if (!count || count === 0) {
-      const { error: insertErr } = await supabase
-        .from('profiles')
-        .insert({ id: user.id, email: user.email ?? '', plan_active: true, plan_expires_at: null })
-      if (insertErr) {
-        // Try without email column
-        const { error: insertErr2 } = await supabase
-          .from('profiles')
-          .insert({ id: user.id, plan_active: true, plan_expires_at: null })
-        if (insertErr2) {
-          setSelfError(`Insert falhou: ${insertErr2.message}`)
-          setActivatingSelf(false)
-          return
-        }
-      }
-    }
-    setActivatingSelf(false)
-    setSelfActivated(true)
-    loadMyProfile()
-    loadData()
   }
 
   const loadData = useCallback(async () => {
