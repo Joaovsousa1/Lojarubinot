@@ -40,18 +40,53 @@ export default function AdminPanel() {
   const [newPayment, setNewPayment] = useState({ userId: '', amount: '', note: '' })
   const [activatingSelf, setActivatingSelf] = useState(false)
   const [selfActivated, setSelfActivated] = useState(false)
+  const [selfError, setSelfError] = useState('')
+  const [myProfile, setMyProfile] = useState(null)
+
+  const loadMyProfile = useCallback(async () => {
+    if (!user?.id) return
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+    setMyProfile(data ?? null)
+    if (data?.plan_active && !data?.plan_expires_at) setSelfActivated(true)
+  }, [user?.id])
+
+  useEffect(() => { loadMyProfile() }, [loadMyProfile])
 
   const activateSelf = async () => {
     if (!user?.id) return
     setActivatingSelf(true)
-    await supabase.from('profiles').upsert({
-      id: user.id,
-      email: user.email,
-      plan_active: true,
-      plan_expires_at: null,
-    })
+    setSelfError('')
+    // Try update first (row may already exist)
+    const { error: updateErr, count } = await supabase
+      .from('profiles')
+      .update({ plan_active: true, plan_expires_at: null })
+      .eq('id', user.id)
+      .select('id')
+    if (updateErr) {
+      setSelfError(`Update falhou: ${updateErr.message}`)
+      setActivatingSelf(false)
+      return
+    }
+    // If no row was updated, try insert
+    if (!count || count === 0) {
+      const { error: insertErr } = await supabase
+        .from('profiles')
+        .insert({ id: user.id, email: user.email ?? '', plan_active: true, plan_expires_at: null })
+      if (insertErr) {
+        // Try without email column
+        const { error: insertErr2 } = await supabase
+          .from('profiles')
+          .insert({ id: user.id, plan_active: true, plan_expires_at: null })
+        if (insertErr2) {
+          setSelfError(`Insert falhou: ${insertErr2.message}`)
+          setActivatingSelf(false)
+          return
+        }
+      }
+    }
     setActivatingSelf(false)
     setSelfActivated(true)
+    loadMyProfile()
     loadData()
   }
 
@@ -145,17 +180,7 @@ export default function AdminPanel() {
           <p className="text-xs text-gray-600 mt-0.5">Painel administrativo</p>
         </div>
         <div className="text-right space-y-1">
-          <div className="text-xs text-gray-500">Logado como</div>
-          <div className="text-xs font-medium" style={{ color: '#c084fc' }}>{user?.email}</div>
-          <button onClick={activateSelf} disabled={activatingSelf || selfActivated}
-            className="block w-full text-xs px-3 py-1.5 rounded-lg font-semibold transition-colors"
-            style={{
-              backgroundColor: selfActivated ? '#14532d33' : '#7c3aed',
-              color: selfActivated ? '#4ade80' : '#fff',
-              opacity: activatingSelf ? 0.7 : 1,
-            }}>
-            {selfActivated ? '✓ Plano ativado!' : activatingSelf ? 'Ativando...' : '⚡ Ativar meu plano'}
-          </button>
+          <div className="text-xs text-gray-500">Logado como <span style={{ color: '#c084fc' }}>{user?.email}</span></div>
           <button onClick={signOut} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
             Sair
           </button>
@@ -175,6 +200,37 @@ export default function AdminPanel() {
             <div className="text-2xl font-bold" style={{ color }}>{value}</div>
           </div>
         ))}
+      </div>
+
+      {/* Minha Conta */}
+      <div className="rounded-xl p-4" style={{ backgroundColor: '#2a1a3e', border: '1px solid #7c3aed55' }}>
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div className="text-xs text-purple-400 font-semibold mb-0.5">Minha Conta</div>
+            <div className="text-sm font-medium text-white">{user?.email}</div>
+            <div className="text-xs mt-1">
+              {myProfile
+                ? <span style={{ color: myProfile.plan_active && !myProfile.plan_expires_at ? '#4ade80' : '#f87171' }}>
+                    {myProfile.plan_active && !myProfile.plan_expires_at ? '✓ Plano ativo (sem vencimento)' : myProfile.plan_active ? `Vence em ${fmt(myProfile.plan_expires_at)}` : 'Plano inativo'}
+                  </span>
+                : <span className="text-gray-500">Perfil não encontrado no banco</span>
+              }
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <button onClick={activateSelf} disabled={activatingSelf || selfActivated}
+              className="text-xs px-4 py-2 rounded-lg font-semibold"
+              style={{
+                backgroundColor: selfActivated ? '#14532d' : '#7c3aed',
+                color: selfActivated ? '#4ade80' : '#fff',
+                border: `1px solid ${selfActivated ? '#16a34a' : '#9333ea'}`,
+                opacity: activatingSelf ? 0.7 : 1,
+              }}>
+              {selfActivated ? '✓ Plano ativo!' : activatingSelf ? 'Ativando...' : '⚡ Ativar meu plano'}
+            </button>
+            {selfError && <div className="text-xs text-red-400 max-w-xs text-right">{selfError}</div>}
+          </div>
+        </div>
       </div>
 
       {/* Tabs */}
