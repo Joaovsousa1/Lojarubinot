@@ -9,13 +9,23 @@ export function AuthProvider({ children }) {
   const [loading, setLoading]       = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
 
-  const fetchProfile = async (userId) => {
+  const fetchProfile = async (userId, userEmail) => {
     setProfileLoading(true)
-    const { data } = await supabase
+    let { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
+
+    if (!data) {
+      const { data: created } = await supabase
+        .from('profiles')
+        .insert({ id: userId, email: userEmail ?? '', plan_active: false })
+        .select()
+        .single()
+      data = created
+    }
+
     setProfile(data ?? null)
     setProfileLoading(false)
   }
@@ -23,18 +33,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
+      if (session?.user) fetchProfile(session.user.id, session.user.email)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(prev => {
         const next = session?.user ?? null
-        // Mesma ID → mantém o objeto existente para não disparar re-renders
         if (prev?.id && next?.id && prev.id === next.id) return prev
         return next
       })
-      if (session?.user) fetchProfile(session.user.id)
+      if (session?.user) fetchProfile(session.user.id, session.user.email)
       else setProfile(null)
     })
 
@@ -50,7 +59,7 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
-  const refreshProfile = () => user && fetchProfile(user.id)
+  const refreshProfile = () => user && fetchProfile(user.id, user.email)
 
   // TEMP: bypass para reativar conta — remover após corrigir no admin panel
   const TEMP_BYPASS = user?.email === 'regeditelite@gmail.com'

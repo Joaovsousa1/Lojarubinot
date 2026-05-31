@@ -27,7 +27,7 @@ function fmt(iso) {
 }
 
 export default function AdminPanel() {
-  const { signOut } = useAuth()
+  const { signOut, user } = useAuth()
   const [users, setUsers]   = useState([])
   const [metrics, setMetrics] = useState({})
   const [loading, setLoading] = useState(true)
@@ -128,9 +128,13 @@ export default function AdminPanel() {
           </h1>
           <p className="text-xs text-gray-600 mt-0.5">Painel administrativo</p>
         </div>
-        <button onClick={signOut} className="text-xs text-gray-600 hover:text-gray-400 transition-colors">
-          Sair
-        </button>
+        <div className="text-right">
+          <div className="text-xs text-gray-500">Logado como</div>
+          <div className="text-xs font-medium" style={{ color: '#c084fc' }}>{user?.email}</div>
+          <button onClick={signOut} className="text-xs text-gray-600 hover:text-gray-400 transition-colors mt-1">
+            Sair
+          </button>
+        </div>
       </div>
 
       {/* Stats cards */}
