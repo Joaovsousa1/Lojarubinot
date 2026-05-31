@@ -455,9 +455,7 @@ export default function ItemsModule() {
                   quantity: data.buyPriceRC * (data.quantity || 1),
                   server: data.server,
                   observation: `Compra: ${data.name}`,
-                  pricePerK: 0,
-                  totalReceived: 0,
-                  profit: 0,
+                  pricePerK: 0, totalReceived: 0, profit: 0,
                 })
               }
               setShowForm(false)
@@ -483,8 +481,7 @@ export default function ItemsModule() {
                 quantity: sale.soldForRC,
                 server: selling.server,
                 observation: `Venda: ${selling.name}${sale.quantity > 1 ? ` (x${sale.quantity})` : ''}`,
-                pricePerK: 0,
-                totalPaid: 0,
+                pricePerK: 0, totalPaid: 0,
               })
             }
             setSelling(null)

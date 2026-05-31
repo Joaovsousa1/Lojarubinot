@@ -146,14 +146,16 @@ export function AppProvider({ children }) {
   }
 
   function dbToCoin(row) {
+    const obs = row.observation ?? ''
     return {
       id: row.id, type: row.type, date: row.date, quantity: row.quantity,
-      server: row.server, observation: row.observation,
+      server: row.server, observation: obs,
       packageType: row.package_type,
       pricePerK: row.price_per_k,
       totalPaid: row.total_paid,
       totalReceived: row.total_received,
       profit: row.profit,
+      autoSync: obs.startsWith('Compra: ') || obs.startsWith('Venda: '),
     }
   }
 
@@ -189,7 +191,8 @@ export function AppProvider({ children }) {
   const addCoinTransaction = async (tx) => {
     if (!user?.id) return
     const id = generateId()
-    const row = { ...tx, id, user_id: user.id }
+    const obs = tx.observation ?? ''
+    const row = { ...tx, id, user_id: user.id, autoSync: obs.startsWith('Compra: ') || obs.startsWith('Venda: ') }
     setCoins(prev => [row, ...prev])
     const { error } = await supabase.from('coins').insert(coinToDb(row))
     if (error) {

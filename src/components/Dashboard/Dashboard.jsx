@@ -162,10 +162,11 @@ export default function Dashboard() {
 
   const userName = profile?.name || profile?.email?.split('@')[0] || 'usuário'
 
-  // Coins
-  const coinsBought     = coins.filter(c => c.type === 'entrada' && c.date?.startsWith(cur)).reduce((s, c) => s + c.quantity, 0)
-  const coinsSold       = coins.filter(c => c.type !== 'entrada' && c.date?.startsWith(cur)).reduce((s, c) => s + c.quantity, 0)
-  const coinsProfitPIX  = coins.filter(c => c.type !== 'entrada' && c.date?.startsWith(cur)).reduce((s, c) => s + (c.profit ?? 0), 0)
+  // Coins — exclui transações de auto-sync (compra/venda de item) dos contadores manuais
+  const manualCoins     = coins.filter(c => !c.autoSync)
+  const coinsBought     = manualCoins.filter(c => c.type === 'entrada' && c.date?.startsWith(cur)).reduce((s, c) => s + c.quantity, 0)
+  const coinsSold       = manualCoins.filter(c => c.type !== 'entrada' && c.date?.startsWith(cur)).reduce((s, c) => s + c.quantity, 0)
+  const coinsProfitPIX  = manualCoins.filter(c => c.type !== 'entrada' && c.date?.startsWith(cur)).reduce((s, c) => s + (c.profit ?? 0), 0)
   const totalCoinsStock = coins.reduce((s, c) => c.type === 'entrada' ? s + c.quantity : s - c.quantity, 0)
 
   // Items
@@ -177,13 +178,14 @@ export default function Dashboard() {
   const itemsProfitRC  = 0
   const itemsProfitPIX = monthSales.reduce((s, x) => s + realSaleProfit(x, rate), 0)
 
-  // Accounts (regular + loyalty)
-  const accAvailable    = accounts.filter(a => a.status === 'disponível').length
-                        + loyaltyAccounts.filter(a => a.status === 'disponível').length
-  const accSoldMonth    = accounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(cur))
-  const loyaltySoldMonth = loyaltyAccounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(cur))
-  const accProfitPIX    = accSoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
-                        + loyaltySoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
+  // Accounts (regular + loyalty) — usa dateSold ?? dateEntry como fallback p/ contas sem data de venda
+  const soldDate = (a) => a.dateSold ?? a.dateEntry
+  const accAvailable     = accounts.filter(a => a.status === 'disponível').length
+                         + loyaltyAccounts.filter(a => a.status === 'disponível').length
+  const accSoldMonth     = accounts.filter(a => a.status === 'vendida' && soldDate(a)?.startsWith(cur))
+  const loyaltySoldMonth = loyaltyAccounts.filter(a => a.status === 'vendida' && soldDate(a)?.startsWith(cur))
+  const accProfitPIX     = accSoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
+                         + loyaltySoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
 
   // Totals
   const totalPIX = coinsProfitPIX + itemsProfitPIX + accProfitPIX
@@ -192,11 +194,11 @@ export default function Dashboard() {
   // Chart: last 6 months area chart
   const months = getLastNMonths(6)
   const chartData = months.map(({ key, label }) => {
-    const cp   = coins.filter(c => c.type !== 'entrada' && c.date?.startsWith(key)).reduce((s, c) => s + (c.profit ?? 0), 0)
+    const cp   = coins.filter(c => !c.autoSync && c.type !== 'entrada' && c.date?.startsWith(key)).reduce((s, c) => s + (c.profit ?? 0), 0)
     const sale = items.flatMap(i => i.sales ?? []).filter(s => s.date?.startsWith(key))
     const ip   = sale.reduce((s, x) => s + realSaleProfit(x, rate), 0)
-    const ap   = accounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
-             + loyaltyAccounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
+    const ap   = accounts.filter(a => a.status === 'vendida' && soldDate(a)?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
+               + loyaltyAccounts.filter(a => a.status === 'vendida' && soldDate(a)?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
     return { label, Coins: +cp.toFixed(2), Itens: +ip.toFixed(2), Contas: +ap.toFixed(2), Total: +(cp+ip+ap).toFixed(2) }
   })
 

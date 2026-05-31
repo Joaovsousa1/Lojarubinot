@@ -93,7 +93,9 @@ const CustomTooltip = ({ active, payload, label }) => {
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function MonthlyReport() {
   const { coins, items, accounts, settings } = useApp()
+  const loyaltyAccounts = settings.loyaltyAccounts ?? []
   const rate = settings?.rcRate || 0.087
+  const soldDate = (a) => a.dateSold ?? a.dateEntry
   const months = getLastNMonths(12)
   const [selectedMonth, setSelectedMonth] = useState(months[months.length - 1].key)
 
@@ -139,14 +141,16 @@ export default function MonthlyReport() {
     return { sales, totalQty, totalRC, totalPIX, profitRC, profitPIX, topItems }
   }, [items, selectedMonth, rate])
 
-  // ── account sales for selected month ──
+  // ── account sales for selected month (regular + loyalty) ──
   const accStats = useMemo(() => {
-    const soldAccs = accounts.filter(a => a.status === 'vendida' && inMonth(a.dateSold, selectedMonth))
-    const totalReceived = soldAccs.reduce((s, a) => s + (a.sellPrice || 0), 0)
-    const totalCost     = soldAccs.reduce((s, a) => s + (a.buyPrice  || 0), 0)
+    const soldAccs    = accounts.filter(a => a.status === 'vendida' && inMonth(soldDate(a), selectedMonth))
+    const soldLoyalty = loyaltyAccounts.filter(a => a.status === 'vendida' && inMonth(soldDate(a), selectedMonth))
+    const allSold       = [...soldAccs, ...soldLoyalty]
+    const totalReceived = allSold.reduce((s, a) => s + (a.sellPrice || 0), 0)
+    const totalCost     = allSold.reduce((s, a) => s + (a.buyPrice  || 0), 0)
     const profit        = totalReceived - totalCost
-    return { soldAccs, totalReceived, totalCost, profit }
-  }, [accounts, selectedMonth])
+    return { soldAccs, soldLoyalty, allSold, totalReceived, totalCost, profit }
+  }, [accounts, loyaltyAccounts, selectedMonth])
 
   // ── totals ──
   const grandPIX = coinStats.profitCoins + itemStats.profitPIX + accStats.profit
@@ -155,12 +159,13 @@ export default function MonthlyReport() {
   // ── chart data (last 6 months) ──
   const chartData = useMemo(() => {
     return getLastNMonths(6).map(({ key, label }) => {
-      const coinP = coins.filter(c => c.type !== 'entrada' && inMonth(c.date, key)).reduce((s, c) => s + (c.profit || 0), 0)
+      const coinP = coins.filter(c => !c.autoSync && c.type !== 'entrada' && inMonth(c.date, key)).reduce((s, c) => s + (c.profit || 0), 0)
       const itemP = items.flatMap(it => (it.sales || []).filter(s => inMonth(s.date, key))).reduce((s, sale) => s + realSaleProfit(sale, rate), 0)
-      const accP  = accounts.filter(a => a.status === 'vendida' && inMonth(a.dateSold, key)).reduce((s, a) => s + (a.sellPrice - a.buyPrice || 0), 0)
+      const accP  = accounts.filter(a => a.status === 'vendida' && inMonth(soldDate(a), key)).reduce((s, a) => s + ((a.sellPrice||0) - (a.buyPrice||0)), 0)
+               + loyaltyAccounts.filter(a => a.status === 'vendida' && inMonth(soldDate(a), key)).reduce((s, a) => s + ((a.sellPrice||0) - (a.buyPrice||0)), 0)
       return { label, coins: +coinP.toFixed(2), itens: +itemP.toFixed(2), contas: +accP.toFixed(2) }
     })
-  }, [coins, items, accounts])
+  }, [coins, items, accounts, loyaltyAccounts])
 
   // ── print report ──
   const printReport = () => window.print()
@@ -365,26 +370,36 @@ export default function MonthlyReport() {
 
       {/* ── Accounts sold detail ── */}
       <Section title="Contas Vendidas" icon="👤" color="#22c55e">
-        {accStats.soldAccs.length === 0 ? (
+        {accStats.allSold.length === 0 ? (
           <div className="px-5 py-6 text-sm text-center" style={{ color: '#4b5563' }}>Nenhuma conta vendida neste mês.</div>
         ) : (
           <>
             <TableRow head cols={[
-              { value: 'PERSONAGEM', w: '1fr' }, { value: 'SERVER', w: '110px' },
-              { value: 'VOCAÇÃO', w: '100px' }, { value: 'NÍVEL', w: '70px', right: true },
+              { value: 'PERSONAGEM / EMAIL', w: '1fr' }, { value: 'TIPO', w: '80px' },
+              { value: 'SERVER', w: '100px' },
               { value: 'DATA VENDA', w: '110px' }, { value: 'COMPRA', w: '100px', right: true },
               { value: 'VENDA', w: '100px', right: true }, { value: 'LUCRO', w: '100px', right: true },
             ]} />
             {accStats.soldAccs.map(a => (
               <TableRow key={a.id} cols={[
-                { value: a.charName || 'Sem nome', w: '1fr', bold: true, color: '#e2e8f0' },
-                { value: a.server || '—', w: '110px', color: '#94a3b8' },
-                { value: a.vocation || '—', w: '100px', color: '#94a3b8' },
-                { value: a.level || '—', w: '70px', right: true, color: '#94a3b8' },
-                { value: formatDate(a.dateSold), w: '110px', color: '#6b7280' },
+                { value: a.charName || `${a.vocation} Lv${a.level}`, w: '1fr', bold: true, color: '#e2e8f0' },
+                { value: '👤 Char', w: '80px', color: '#94a3b8' },
+                { value: a.server || '—', w: '100px', color: '#94a3b8' },
+                { value: formatDate(soldDate(a)), w: '110px', color: '#6b7280' },
                 { value: formatCurrency(a.buyPrice || 0), w: '100px', right: true, color: '#f87171' },
                 { value: formatCurrency(a.sellPrice || 0), w: '100px', right: true },
-                { value: formatCurrency((a.sellPrice || 0) - (a.buyPrice || 0)), w: '100px', right: true, color: ((a.sellPrice || 0) - (a.buyPrice || 0)) >= 0 ? '#4ade80' : '#f87171', bold: true },
+                { value: formatCurrency((a.sellPrice || 0) - (a.buyPrice || 0)), w: '100px', right: true, color: ((a.sellPrice||0)-(a.buyPrice||0)) >= 0 ? '#4ade80' : '#f87171', bold: true },
+              ]} />
+            ))}
+            {accStats.soldLoyalty.map(a => (
+              <TableRow key={a.id} cols={[
+                { value: a.email || '—', w: '1fr', bold: true, color: '#c4b5fd' },
+                { value: '⭐ Loyalty', w: '80px', color: '#c084fc' },
+                { value: a.server !== 'Todos' ? a.server : '—', w: '100px', color: '#94a3b8' },
+                { value: formatDate(soldDate(a)), w: '110px', color: '#6b7280' },
+                { value: formatCurrency(a.buyPrice || 0), w: '100px', right: true, color: '#f87171' },
+                { value: formatCurrency(a.sellPrice || 0), w: '100px', right: true },
+                { value: formatCurrency((a.sellPrice || 0) - (a.buyPrice || 0)), w: '100px', right: true, color: ((a.sellPrice||0)-(a.buyPrice||0)) >= 0 ? '#4ade80' : '#f87171', bold: true },
               ]} />
             ))}
             <div className="px-5 py-3 flex justify-end gap-8 text-sm" style={{ backgroundColor: '#221530', borderTop: '1px solid #3a3050' }}>
