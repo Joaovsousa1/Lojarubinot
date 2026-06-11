@@ -17,9 +17,9 @@ export const ITEM_VOCATIONS = {
   'Grand Sanguine Bow': 'RP',       'Grand Sanguine Crossbow': 'RP',
   'Grand Sanguine Claws': 'MONK',
   // ── FALCON ────────────────────────────────────────────────────────────────
-  'Falcon Coif': 'ALL',      'Falcon Circlet': 'ALL',   'Falcon Plate': 'EK',
-  'Falcon Greaves': 'ALL',   'Falcon Boots': 'EK',      'Falcon Shield': 'ALL',
-  'Falcon Escutcheon': 'ALL','Falcon Rod': 'ED',         'Falcon Wand': 'MS',
+  'Falcon Coif': 'EK',       'Falcon Circlet': 'MS',    'Falcon Plate': 'EK',
+  'Falcon Greaves': 'EK',    'Falcon Boots': 'EK',      'Falcon Shield': 'EK',
+  'Falcon Escutcheon': 'EK', 'Falcon Rod': 'ED',        'Falcon Wand': 'MS',
   'Falcon Longsword': 'EK',  'Falcon Mace': 'EK',       'Falcon Battleaxe': 'EK',
   'Falcon Bow': 'RP',        'Falcon Sai': 'MONK',
   // ── COBRA ─────────────────────────────────────────────────────────────────
@@ -44,10 +44,10 @@ export const ITEM_VOCATIONS = {
   'Lion Boots': 'EK',        'Lion Shield': 'EK',       'Lion Spangenhelm': 'RP',
   'Lion Longsword': 'EK',    'Lion Axe': 'EK',          'Lion Hammer': 'EK',
   'Lion Mace': 'EK',         'Lion Longbow': 'RP',      'Lion Bow': 'RP',
-  'Lion Spellbook': 'ALL',   'Lion Rod': 'ED',          'Lion Wand': 'MS',
+  'Lion Spellbook': 'MS',    'Lion Rod': 'ED',          'Lion Wand': 'MS',
   'Lion Claws': 'MONK',
   // ── GNOME ─────────────────────────────────────────────────────────────────
-  'Gnome Helmet': 'EK',      'Gnome Armor': 'EK',       'Gnome Legs': 'EK',
+  'Gnome Helmet': 'MS',      'Gnome Armor': 'RP',       'Gnome Legs': 'MS',
   'Gnome Boots': 'EK',       'Gnome Shield': 'EK',
   'Gnomish Footwraps': 'MONK','Gnomish Cuirass': 'MONK', 'Gnome Sword': 'EK',
   // ── ELDRITCH ──────────────────────────────────────────────────────────────
@@ -72,8 +72,8 @@ export const ITEM_VOCATIONS = {
   'Rift Crossbow': 'RP',     'Warsinger Bow': 'RP',
   'The Devileye': 'ED',      'Deepling Staff': 'ED',
   // ── STAG ──────────────────────────────────────────────────────────────────
-  'Stag Helmet': 'EK',       'Stag Robe': 'MS',         'Stag Plate': 'EK',
-  'Stag Legs': 'EK',         'Stag Shinguards': 'MONK',  'Stag Boots': 'RP',
+  'Stag Helmet': 'MS',       'Stag Robe': 'MONK',       'Stag Plate': 'RP',
+  'Stag Legs': 'EK',         'Stag Shinguards': 'RP',   'Stag Boots': 'ED',
   'Stag Footwraps': 'MONK',  'Stag Shield': 'EK',
   'Refined Stag Shield': 'EK','Stag Scrolls': 'ED',      'Stag Spellbook': 'MS',
   // ── SPIRITTHORN ───────────────────────────────────────────────────────────
@@ -96,9 +96,9 @@ export const ITEM_VOCATIONS = {
   'Arboreal Crown': 'ED',     'Arboreal Tome': 'ED',
   'Arboreal Ring': 'ED',      'Charged Arboreal Ring': 'ED',
   // ── CRYPT ─────────────────────────────────────────────────────────────────
-  'Crypt Strike': 'EK',   'Crypt Breaker': 'EK',  'Crypt Slicer': 'EK',
+  'Crypt Strike': 'MONK', 'Crypt Breaker': 'EK',  'Crypt Slicer': 'EK',
   'Crypt Splitter': 'EK', 'Crypt Spine': 'RP',    'Crypt Bile': 'MS',
-  'Crypt Jaw': 'MONK',
+  'Crypt Jaw': 'ED',
   // ── AMBER ─────────────────────────────────────────────────────────────────
   'Amber Axe': 'EK',         'Amber Bludgeon': 'EK',   'Amber Bow': 'RP',
   'Amber Crossbow': 'RP',    'Amber Cudgel': 'EK',     'Amber Greataxe': 'EK',
