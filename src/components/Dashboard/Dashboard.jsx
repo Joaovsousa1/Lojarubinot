@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { TrendingUp, TrendingDown, Coins, Package, Users, ArrowRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, Coins, Package, Users, ArrowRight, CalendarDays } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
+import { supabase } from '../../lib/supabase'
 import {
   formatCurrency, formatRC, formatNumber, getCurrentMonth, getLastNMonths,
   SET_COLORS, VOCATION_OUTFIT, VOCATION_COLORS, realSaleProfit,
@@ -13,6 +14,162 @@ import ItemImage from '../UI/ItemImage'
 import TierBadge from '../UI/TierBadge'
 
 // ── helpers ──────────────────────────────────────────────────────────────────
+function getProfitForRange(days, { coins, items, accounts, loyaltyAccounts, rate }) {
+  const now = new Date()
+  const cutoff = days === 0
+    ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    : new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+
+  const pad = (n) => String(n).padStart(2, '0')
+  const cutoffStr = `${cutoff.getFullYear()}-${pad(cutoff.getMonth()+1)}-${pad(cutoff.getDate())}`
+  const inRange = (d) => {
+    if (!d) return false
+    const dateStr = d.substring(0, 10) // "YYYY-MM-DD"
+    return dateStr >= cutoffStr
+  }
+  const soldDate = (a) => a.dateSold ?? null
+
+  const coinsProfit = coins
+    .filter(c => !c.autoSync && c.type !== 'entrada' && inRange(c.date))
+    .reduce((s, c) => s + (c.profit ?? 0), 0)
+
+  const itemsProfit = items
+    .flatMap(i => i.sales ?? [])
+    .filter(s => inRange(s.date))
+    .reduce((s, x) => s + realSaleProfit(x, rate), 0)
+
+  const soldInRange = (a) => { const sd = soldDate(a); return sd && inRange(sd) }
+  const accProfit =
+    accounts.filter(a => a.status === 'vendida' && soldInRange(a))
+      .reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0) +
+    loyaltyAccounts.filter(a => a.status === 'vendida' && soldInRange(a))
+      .reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
+
+  return { coinsProfit, itemsProfit, accProfit, total: coinsProfit + itemsProfit + accProfit }
+}
+
+const PERIODS = [
+  { label: 'Hoje',   days: 0  },
+  { label: '7 dias', days: 7  },
+  { label: '15 dias', days: 15 },
+  { label: '30 dias', days: 30 },
+]
+
+function ProfitPeriodSection({ coins, items, accounts, loyaltyAccounts, rate }) {
+  const [active, setActive] = useState(1)
+  const data = PERIODS.map(p => ({
+    ...p,
+    ...getProfitForRange(p.days, { coins, items, accounts, loyaltyAccounts, rate }),
+  }))
+  const sel = data[active]
+
+  return (
+    <div className="rounded-2xl p-5 relative overflow-hidden"
+      style={{ backgroundColor: '#1e1330', border: '1px solid rgba(124,58,237,0.18)', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
+
+      {/* header */}
+      <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl" style={{ backgroundColor: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.25)' }}>
+            <CalendarDays size={16} style={{ color: '#a78bfa' }} />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-white">Lucro por período</h2>
+            <p className="text-xs mt-0.5" style={{ color: '#475569' }}>Selecione o intervalo de tempo</p>
+          </div>
+        </div>
+
+        {/* period pills */}
+        <div className="flex gap-1.5 flex-wrap">
+          {PERIODS.map((p, i) => (
+            <button key={p.label} onClick={() => setActive(i)}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
+              style={{
+                backgroundColor: active === i ? 'rgba(124,58,237,0.35)' : 'rgba(124,58,237,0.08)',
+                border: active === i ? '1px solid rgba(167,85,247,0.6)' : '1px solid rgba(124,58,237,0.2)',
+                color: active === i ? '#c084fc' : '#64748b',
+                cursor: 'pointer',
+              }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* main content */}
+      <div className="flex flex-wrap items-center justify-between gap-6">
+        {/* total */}
+        <div>
+          <div className="text-xs font-semibold mb-1" style={{ color: '#64748b', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            Total — {sel.label}
+          </div>
+          <div className="text-4xl font-black" style={{
+            letterSpacing: '-1px',
+            color: sel.total >= 0 ? '#f1f5f9' : '#f87171',
+          }}>
+            {formatCurrency(sel.total)}
+          </div>
+        </div>
+
+        {/* breakdown */}
+        <div className="flex gap-5 flex-wrap">
+          {[
+            { label: 'Coins',  value: sel.coinsProfit,  color: '#fbbf24', icon: '💰' },
+            { label: 'Itens',  value: sel.itemsProfit,  color: '#c084fc', icon: '📦' },
+            { label: 'Contas', value: sel.accProfit,    color: '#4ade80', icon: '👤' },
+          ].map(s => (
+            <div key={s.label} className="flex flex-col items-center gap-1 min-w-[80px]">
+              <div className="text-xl">{s.icon}</div>
+              <div className="text-sm font-black" style={{ color: s.color }}>{formatCurrency(s.value)}</div>
+              <div className="text-[10px] font-semibold" style={{ color: '#475569' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* mini-bar visual */}
+      {sel.total > 0 && (
+        <div className="mt-5">
+          <div className="flex rounded-full overflow-hidden h-2" style={{ gap: 2 }}>
+            {[
+              { value: sel.coinsProfit,  color: '#fbbf24' },
+              { value: sel.itemsProfit,  color: '#a855f7' },
+              { value: sel.accProfit,    color: '#22c55e' },
+            ].filter(s => s.value > 0).map((s, i) => (
+              <div key={i} style={{
+                width: `${(s.value / sel.total) * 100}%`,
+                backgroundColor: s.color,
+                borderRadius: 4,
+                minWidth: 4,
+              }} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* all-period mini cards */}
+      <div className="grid grid-cols-4 gap-2 mt-5" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+        {data.map((p, i) => (
+          <button key={p.label} onClick={() => setActive(i)}
+            className="rounded-xl p-3 text-left transition-all"
+            style={{
+              backgroundColor: active === i ? 'rgba(124,58,237,0.18)' : 'rgba(255,255,255,0.03)',
+              border: active === i ? '1px solid rgba(167,85,247,0.4)' : '1px solid rgba(255,255,255,0.05)',
+              cursor: 'pointer',
+            }}>
+            <div className="text-[10px] font-bold mb-1" style={{ color: active === i ? '#a78bfa' : '#4b5563' }}>
+              {p.label}
+            </div>
+            <div className="text-sm font-black" style={{ color: p.total >= 0 ? (active === i ? '#f1f5f9' : '#6b7280') : '#f87171' }}>
+              {formatCurrency(p.total)}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function greeting() {
   const h = new Date().getHours()
   if (h < 12) return 'Bom dia'
@@ -155,9 +312,25 @@ function AccountRow({ account: a }) {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { coins, items, accounts, settings, setActiveModule } = useApp()
+  const { coins, items, accounts, settings, setActiveModule, loadError } = useApp()
   const loyaltyAccounts = settings.loyaltyAccounts ?? []
-  const { profile } = useAuth()
+  const { profile, isAdmin } = useAuth()
+  const [diagResult, setDiagResult] = React.useState(null)
+  const [diagLoading, setDiagLoading] = React.useState(false)
+
+  const runDiag = async () => {
+    setDiagLoading(true); setDiagResult(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) { setDiagResult({ error: 'Sem sessão ativa' }); return }
+      const r = await fetch('/api/diagnose', { headers: { Authorization: `Bearer ${token}` } })
+      if (!r.ok) { setDiagResult({ error: `HTTP ${r.status}` }); return }
+      setDiagResult(await r.json())
+    } catch (e) { setDiagResult({ error: e.message }) }
+    finally { setDiagLoading(false) }
+  }
+
   const cur = getCurrentMonth()
 
   const userName = profile?.name || profile?.email?.split('@')[0] || 'usuário'
@@ -175,15 +348,15 @@ export default function Dashboard() {
   const itemsInStock  = items.reduce((s, i) => s + i.quantity, 0)
   const itemsSoldQty  = monthSales.reduce((s, x) => s + x.quantity, 0)
   const rate           = settings.rcRate || 0.087
-  const itemsProfitRC  = 0
+  const itemsProfitRC  = monthSales.reduce((s, x) => s + (x.profitRC ?? 0), 0)
   const itemsProfitPIX = monthSales.reduce((s, x) => s + realSaleProfit(x, rate), 0)
 
-  // Accounts (regular + loyalty) — usa dateSold ?? dateEntry como fallback p/ contas sem data de venda
-  const soldDate = (a) => a.dateSold ?? a.dateEntry
+  // Accounts (regular + loyalty) — usa apenas dateSold; sem data de venda, exclui do mês
+  const soldDate = (a) => a.dateSold ?? null
   const accAvailable     = accounts.filter(a => a.status === 'disponível').length
                          + loyaltyAccounts.filter(a => a.status === 'disponível').length
-  const accSoldMonth     = accounts.filter(a => a.status === 'vendida' && soldDate(a)?.startsWith(cur))
-  const loyaltySoldMonth = loyaltyAccounts.filter(a => a.status === 'vendida' && soldDate(a)?.startsWith(cur))
+  const accSoldMonth     = accounts.filter(a => a.status === 'vendida' && (() => { const sd = soldDate(a); return sd && sd.startsWith(cur) })())
+  const loyaltySoldMonth = loyaltyAccounts.filter(a => a.status === 'vendida' && (() => { const sd = soldDate(a); return sd && sd.startsWith(cur) })())
   const accProfitPIX     = accSoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
                          + loyaltySoldMonth.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
 
@@ -197,8 +370,8 @@ export default function Dashboard() {
     const cp   = coins.filter(c => !c.autoSync && c.type !== 'entrada' && c.date?.startsWith(key)).reduce((s, c) => s + (c.profit ?? 0), 0)
     const sale = items.flatMap(i => i.sales ?? []).filter(s => s.date?.startsWith(key))
     const ip   = sale.reduce((s, x) => s + realSaleProfit(x, rate), 0)
-    const ap   = accounts.filter(a => a.status === 'vendida' && soldDate(a)?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
-               + loyaltyAccounts.filter(a => a.status === 'vendida' && soldDate(a)?.startsWith(key)).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
+    const ap   = accounts.filter(a => a.status === 'vendida' && (() => { const sd = soldDate(a); return sd && sd.startsWith(key) })()).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
+               + loyaltyAccounts.filter(a => a.status === 'vendida' && (() => { const sd = soldDate(a); return sd && sd.startsWith(key) })()).reduce((s, a) => s + ((a.sellPrice||0)-(a.buyPrice||0)), 0)
     return { label, Coins: +cp.toFixed(2), Itens: +ip.toFixed(2), Contas: +ap.toFixed(2), Total: +(cp+ip+ap).toFixed(2) }
   })
 
@@ -233,6 +406,40 @@ export default function Dashboard() {
           <ArrowRight size={14} />
         </button>
       </div>
+
+      {/* ── Diagnóstico (só para admin/owner) ── */}
+      {isAdmin && (loadError || diagResult) && (
+        <div className="rounded-2xl p-4 space-y-3" style={{ backgroundColor: '#0f172a', border: '1px solid #1d4ed8' }}>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold" style={{ color: '#60a5fa' }}>🔧 Diagnóstico de Carregamento</span>
+            <button onClick={runDiag} disabled={diagLoading}
+              className="text-xs px-3 py-1 rounded font-bold"
+              style={{ backgroundColor: '#1e3a5f', color: '#93c5fd', border: '1px solid #2563eb' }}>
+              {diagLoading ? 'Testando...' : '▶ Testar conexão'}
+            </button>
+          </div>
+          {loadError && (
+            <div className="text-xs font-mono p-2 rounded" style={{ backgroundColor: '#1e293b', color: '#fca5a5' }}>
+              Erro nas queries: {loadError.code} — {loadError.message}
+            </div>
+          )}
+          {diagResult && (
+            <pre className="text-xs font-mono p-2 rounded overflow-auto max-h-48"
+              style={{ backgroundColor: '#1e293b', color: '#7dd3fc' }}>
+              {JSON.stringify(diagResult, null, 2)}
+            </pre>
+          )}
+        </div>
+      )}
+      {isAdmin && !loadError && !diagResult && (
+        <div className="flex justify-end">
+          <button onClick={runDiag} disabled={diagLoading}
+            className="text-xs px-2 py-1 rounded opacity-30 hover:opacity-80 transition-opacity"
+            style={{ backgroundColor: '#1e3a5f', color: '#93c5fd', border: '1px solid #2563eb' }}>
+            {diagLoading ? 'Testando...' : '🔧 Testar conexão Supabase'}
+          </button>
+        </div>
+      )}
 
       {/* ── Hero profit card ── */}
       <div className="rounded-2xl p-6 relative overflow-hidden"
@@ -278,6 +485,15 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Profit by period ── */}
+      <ProfitPeriodSection
+        coins={coins}
+        items={items}
+        accounts={accounts}
+        loyaltyAccounts={loyaltyAccounts}
+        rate={rate}
+      />
 
       {/* ── Stat cards ── */}
       <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
