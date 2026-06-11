@@ -241,6 +241,71 @@ function StatCard({ icon: Icon, color, title, main, sub, note, trend }) {
   )
 }
 
+// ── Recent Sales Panel ────────────────────────────────────────────────────────
+const VOC_EMOJI = { EK: '⚔️', RP: '🏹', ED: '🧊', MS: '🔥', MONK: '🥋', ALL: '📿' }
+
+function RecentSalesPanel({ items, rate }) {
+  const today     = new Date().toISOString().substring(0, 10)
+  const yesterday = new Date(Date.now() - 86400000).toISOString().substring(0, 10)
+
+  const label = (dateStr) => {
+    const d = dateStr?.substring(0, 10)
+    if (!d) return '—'
+    if (d === today)     return 'Hoje'
+    if (d === yesterday) return 'Ontem'
+    return d.substring(8) + '/' + d.substring(5, 7)
+  }
+
+  const sales = items
+    .flatMap(it => (it.sales ?? []).map(s => ({ ...s, itemName: it.name, vocation: it.vocation ?? 'ALL' })))
+    .filter(s => s.date)
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 15)
+
+  if (sales.length === 0) return (
+    <div className="flex flex-col items-center justify-center py-10 gap-2">
+      <span style={{ fontSize: 28 }}>📋</span>
+      <span className="text-xs" style={{ color: '#374151' }}>Sem vendas ainda</span>
+    </div>
+  )
+
+  const rows = []
+  let lastDate = null
+  for (const s of sales) {
+    const d = s.date?.substring(0, 10)
+    if (d !== lastDate) { rows.push({ type: 'sep', label: label(d), key: `sep-${d}` }); lastDate = d }
+    rows.push({ type: 'sale', ...s, key: s.id ?? `${s.date}-${s.itemName}` })
+  }
+
+  return (
+    <div className="overflow-y-auto" style={{ maxHeight: 210 }}>
+      {rows.map(row => {
+        if (row.type === 'sep') return (
+          <div key={row.key} className="text-[10px] font-bold uppercase tracking-widest pt-2 pb-1"
+            style={{ color: '#4b5563' }}>{row.label}</div>
+        )
+        const profit   = realSaleProfit(row, rate)
+        const vocColor = VOCATION_COLORS[row.vocation] ?? '#6b7280'
+        return (
+          <div key={row.key} className="flex items-center gap-2 py-1 px-1 rounded-lg"
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+            <div className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
+              style={{ backgroundColor: vocColor + '28', border: `1px solid ${vocColor}44`, fontSize: 9 }}>
+              {VOC_EMOJI[row.vocation] ?? '📿'}
+            </div>
+            <span className="text-xs flex-1 truncate" style={{ color: '#94a3b8' }}>{row.itemName}</span>
+            <span className="text-[11px] font-bold shrink-0"
+              style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>
+              {profit >= 0 ? '+' : ''}{formatCurrency(profit)}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // ── Quick item row ─────────────────────────────────────────────────────────────
 function ItemRow({ item }) {
   const sc = SET_COLORS[item.set] ?? SET_COLORS['Outros']
@@ -516,52 +581,67 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* ── Chart ── */}
-      <div className="rounded-2xl p-5 relative overflow-hidden"
-        style={{ backgroundColor: '#1e1330', border: '1px solid rgba(124,58,237,0.18)', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h2 className="text-base font-bold text-white">Lucro — últimos 6 meses</h2>
-            <p className="text-xs mt-0.5" style={{ color: '#475569' }}>Evolução mensal em PIX (R$)</p>
+      {/* ── Chart + Recent Sales ── */}
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'minmax(0,7fr) minmax(0,3fr)' }}>
+
+        {/* Gráfico */}
+        <div className="rounded-2xl p-5 relative overflow-hidden"
+          style={{ backgroundColor: '#1e1330', border: '1px solid rgba(124,58,237,0.18)', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-base font-bold text-white">Lucro — últimos 6 meses</h2>
+              <p className="text-xs mt-0.5" style={{ color: '#475569' }}>Evolução mensal em PIX (R$)</p>
+            </div>
+            <div className="flex gap-4 flex-wrap">
+              {[['#f59e0b','Coins'],['#a855f7','Itens'],['#22c55e','Contas']].map(([c,l]) => (
+                <div key={l} className="flex items-center gap-1.5 text-xs" style={{ color: '#64748b' }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
+                  {l}
+                </div>
+              ))}
+            </div>
           </div>
-          {/* legend */}
-          <div className="flex gap-4 flex-wrap">
-            {[['#f59e0b','Coins'],['#a855f7','Itens'],['#22c55e','Contas']].map(([c,l]) => (
-              <div key={l} className="flex items-center gap-1.5 text-xs" style={{ color: '#64748b' }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: c }} />
-                {l}
-              </div>
-            ))}
-          </div>
+          {!hasAnyData ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3">
+              <div style={{ fontSize: 40 }}>📊</div>
+              <div className="text-sm font-semibold" style={{ color: '#374151' }}>Sem dados ainda</div>
+              <div className="text-xs" style={{ color: '#1f2937' }}>Registre coins, itens e contas para ver o gráfico</div>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={230}>
+              <AreaChart data={chartData}>
+                <defs>
+                  {[['coins','#f59e0b'],['itens','#a855f7'],['contas','#22c55e']].map(([k,c]) => (
+                    <linearGradient key={k} id={`grad_${k}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={c} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={c} stopOpacity={0} />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.1)" vertical={false} />
+                <XAxis dataKey="label" tick={{ fill: '#4b5563', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
+                <Tooltip content={<CustomTooltip />} />
+                <Area type="monotone" dataKey="Coins"  stroke="#f59e0b" fill="url(#grad_coins)"  strokeWidth={2} dot={false} name="Coins" />
+                <Area type="monotone" dataKey="Itens"  stroke="#a855f7" fill="url(#grad_itens)"  strokeWidth={2} dot={false} name="Itens" />
+                <Area type="monotone" dataKey="Contas" stroke="#22c55e" fill="url(#grad_contas)" strokeWidth={2} dot={false} name="Contas" />
+              </AreaChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
-        {!hasAnyData ? (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <div style={{ fontSize: 40 }}>📊</div>
-            <div className="text-sm font-semibold" style={{ color: '#374151' }}>Sem dados ainda</div>
-            <div className="text-xs" style={{ color: '#1f2937' }}>Registre coins, itens e contas para ver o gráfico</div>
+        {/* Últimas vendas */}
+        <div className="rounded-2xl p-5"
+          style={{ backgroundColor: '#1e1330', border: '1px solid rgba(124,58,237,0.18)', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="p-1.5 rounded-lg" style={{ backgroundColor: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.25)' }}>
+              <Package size={13} style={{ color: '#a78bfa' }} />
+            </div>
+            <h3 className="text-sm font-bold text-white">Últimas vendas</h3>
           </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={230}>
-            <AreaChart data={chartData}>
-              <defs>
-                {[['coins','#f59e0b'],['itens','#a855f7'],['contas','#22c55e']].map(([k,c]) => (
-                  <linearGradient key={k} id={`grad_${k}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={c} stopOpacity={0.25} />
-                    <stop offset="95%" stopColor={c} stopOpacity={0} />
-                  </linearGradient>
-                ))}
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.1)" vertical={false} />
-              <XAxis dataKey="label" tick={{ fill: '#4b5563', fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="Coins"  stroke="#f59e0b" fill="url(#grad_coins)"  strokeWidth={2} dot={false} name="Coins" />
-              <Area type="monotone" dataKey="Itens"  stroke="#a855f7" fill="url(#grad_itens)"  strokeWidth={2} dot={false} name="Itens" />
-              <Area type="monotone" dataKey="Contas" stroke="#22c55e" fill="url(#grad_contas)" strokeWidth={2} dot={false} name="Contas" />
-            </AreaChart>
-          </ResponsiveContainer>
-        )}
+          <RecentSalesPanel items={items} rate={rate} />
+        </div>
+
       </div>
 
       {/* ── Quick lists ── */}
