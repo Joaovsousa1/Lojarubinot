@@ -288,7 +288,7 @@ export default function ItemsModule() {
 
     if (!sections.length) { setShowCopyModal(false); return }
 
-    const text = `🔥📦 *ITENS DISPONÍVEIS* 📦🔥\n\n${sections.join('\n\n')}`
+    const text = sections.join('\n\n')
 
     navigator.clipboard.writeText(text).then(() => {
       setListCopied(true)
