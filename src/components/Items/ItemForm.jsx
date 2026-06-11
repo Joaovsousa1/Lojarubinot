@@ -8,9 +8,18 @@ const INPUT = 'w-full px-3 py-2 rounded-lg text-sm text-white outline-none'
 const INPUT_STYLE = { backgroundColor: '#1a1025', border: '1px solid #3a3050' }
 const LABEL = 'block text-xs text-gray-400 mb-1'
 
+const VOCATIONS = [
+  { value: 'EK',   label: '⚔️ EK'   },
+  { value: 'RP',   label: '🏹 RP'   },
+  { value: 'ED',   label: '🧊 ED'   },
+  { value: 'MS',   label: '🔥 MS'   },
+  { value: 'MONK', label: '🥋 MONK' },
+  { value: 'ALL',  label: '📿 Todos' },
+]
+
 const EMPTY = {
   name: '', imageUrl: '', classification: 4, tier: 0, maxTier: 4,
-  server: '', quantity: 1,
+  server: '', quantity: 1, vocation: 'ALL',
   buyPriceRC: '', buyPricePIX: '',
   sellPriceRC: '', sellPricePIX: '',
   category: 'arma', observation: '', syncCoins: true,
@@ -99,6 +108,7 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
         classification: item.classification, maxTier: item.maxTier,
         category: item.category, set: item.set ?? '',
         tier: Math.min(f.tier, item.maxTier),
+        vocation: item.vocation ?? 'ALL',
       }
       if (!initial) saveDraft(next)
       return next
@@ -221,11 +231,18 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
           </select>
         </div>
         <div>
-          <label className={LABEL}>Servidor</label>
-          <select className={INPUT} style={INPUT_STYLE} value={form.server} onChange={e => set('server', e.target.value)}>
-            {servers.map(s => <option key={s}>{s}</option>)}
+          <label className={LABEL}>Vocação</label>
+          <select className={INPUT} style={INPUT_STYLE} value={form.vocation ?? 'ALL'} onChange={e => set('vocation', e.target.value)}>
+            {VOCATIONS.map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className={LABEL}>Servidor</label>
+        <select className={INPUT} style={INPUT_STYLE} value={form.server} onChange={e => set('server', e.target.value)}>
+          {servers.map(s => <option key={s}>{s}</option>)}
+        </select>
       </div>
 
       <div>
