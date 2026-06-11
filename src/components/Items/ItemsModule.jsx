@@ -7,7 +7,7 @@ import TierBadge from '../UI/TierBadge'
 import ItemImage from '../UI/ItemImage'
 import ItemForm from './ItemForm'
 import ItemSaleModal from './ItemSaleModal'
-import { getItemByName } from '../../data/itemsDatabase'
+import { getItemByName, ITEM_VOCATIONS } from '../../data/itemsDatabase'
 
 function PriceCell({ rc, pix }) {
   if (!rc && !pix) return <span className="text-gray-600">—</span>
@@ -270,6 +270,7 @@ export default function ItemsModule() {
     const getPrice = (it) => (it.sellPricePIX || 0) + (it.sellPriceRC || 0) * rate
 
     const getVoc = (it) => {
+      if (ITEM_VOCATIONS[it.name]) return ITEM_VOCATIONS[it.name]
       const v = it.vocation ?? 'ALL'
       if (v !== 'ALL') return v
       return getItemByName(it.name)?.vocation ?? 'ALL'

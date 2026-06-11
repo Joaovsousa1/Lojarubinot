@@ -1,5 +1,114 @@
 const W = 'https://tibia.fandom.com/wiki/Special:FilePath/'
 
+export const ITEM_VOCATIONS = {
+  // ── SANGUINE ──────────────────────────────────────────────────────────────
+  'Sanguine Armor': 'EK',     'Sanguine Legs': 'EK',       'Sanguine Greaves': 'RP',
+  'Sanguine Galoshes': 'ED',  'Sanguine Boots': 'MS',      'Sanguine Trousers': 'MONK',
+  'Sanguine Coil': 'MS',      'Sanguine Rod': 'ED',
+  'Sanguine Bludgeon': 'EK',  'Sanguine Cudgel': 'EK',
+  'Sanguine Battleaxe': 'EK', 'Sanguine Hatchet': 'EK',
+  'Sanguine Razor': 'EK',     'Sanguine Blade': 'EK',
+  'Sanguine Bow': 'RP',       'Sanguine Crossbow': 'RP',   'Sanguine Claws': 'MONK',
+  // ── GRAND SANGUINE ────────────────────────────────────────────────────────
+  'Grand Sanguine Coil': 'MS',      'Grand Sanguine Rod': 'ED',
+  'Grand Sanguine Bludgeon': 'EK',  'Grand Sanguine Cudgel': 'EK',
+  'Grand Sanguine Battleaxe': 'EK', 'Grand Sanguine Hatchet': 'EK',
+  'Grand Sanguine Razor': 'EK',     'Grand Sanguine Blade': 'EK',
+  'Grand Sanguine Bow': 'RP',       'Grand Sanguine Crossbow': 'RP',
+  'Grand Sanguine Claws': 'MONK',
+  // ── FALCON ────────────────────────────────────────────────────────────────
+  'Falcon Coif': 'ALL',      'Falcon Circlet': 'ALL',   'Falcon Plate': 'EK',
+  'Falcon Greaves': 'ALL',   'Falcon Boots': 'EK',      'Falcon Shield': 'ALL',
+  'Falcon Escutcheon': 'ALL','Falcon Rod': 'ED',         'Falcon Wand': 'MS',
+  'Falcon Longsword': 'EK',  'Falcon Mace': 'EK',       'Falcon Battleaxe': 'EK',
+  'Falcon Bow': 'RP',        'Falcon Sai': 'MONK',
+  // ── COBRA ─────────────────────────────────────────────────────────────────
+  'Cobra Hood': 'EK',        'Cobra Boots': 'EK',
+  'Cobra Axe': 'EK',         'Cobra Club': 'EK',        'Cobra Crossbow': 'RP',
+  'Cobra Rod': 'ED',         'Cobra Sword': 'EK',       'Cobra Wand': 'MS',
+  'Cobra Bo': 'MONK',
+  // ── SOUL ──────────────────────────────────────────────────────────────────
+  'Soulbastion': 'EK',             'Soulshell': 'RP',
+  'Soulmantle': 'MS',              'Soulshroud': 'ED',
+  'Soulgarb': 'MONK',              'Pair of Soulwalkers': 'EK',
+  'Pair of Soulstalkers': 'RP',    'Soulshanks': 'MS',
+  'Soulstrider': 'ED',             'Soulsoles': 'MONK',
+  'Soulshredder': 'EK',            'Soulcrusher': 'EK',
+  'Soulbiter': 'EK',               'Soulcutter': 'EK',
+  'Soulmaimer': 'EK',              'Souleater (Axe)': 'EK',
+  'Soulbleeder': 'RP',             'Soulpiercer': 'RP',
+  'Soulhexer': 'ED',               'Soultainter': 'MS',
+  'Soulkamas': 'MONK',             'Soul Reaper': 'EK',
+  // ── LION ──────────────────────────────────────────────────────────────────
+  'Lion Helmet': 'EK',       'Lion Plate': 'EK',        'Lion Legs': 'EK',
+  'Lion Boots': 'EK',        'Lion Shield': 'EK',       'Lion Spangenhelm': 'RP',
+  'Lion Longsword': 'EK',    'Lion Axe': 'EK',          'Lion Hammer': 'EK',
+  'Lion Mace': 'EK',         'Lion Longbow': 'RP',      'Lion Bow': 'RP',
+  'Lion Spellbook': 'ALL',   'Lion Rod': 'ED',          'Lion Wand': 'MS',
+  'Lion Claws': 'MONK',
+  // ── GNOME ─────────────────────────────────────────────────────────────────
+  'Gnome Helmet': 'EK',      'Gnome Armor': 'EK',       'Gnome Legs': 'EK',
+  'Gnome Boots': 'EK',       'Gnome Shield': 'EK',
+  'Gnomish Footwraps': 'MONK','Gnomish Cuirass': 'MONK', 'Gnome Sword': 'EK',
+  // ── ELDRITCH ──────────────────────────────────────────────────────────────
+  'Eldritch Cowl': 'MS',     'Eldritch Hood': 'ED',     'Eldritch Cuirass': 'EK',
+  'Eldritch Breeches': 'RP', 'Eldritch Shield': 'EK',   'Eldritch Monk Boots': 'MONK',
+  'Eldritch Bow': 'RP',      'Eldritch Quiver': 'RP',
+  'Eldritch Rod': 'ED',      'Eldritch Wand': 'MS',
+  'Eldritch Claymore': 'EK', 'Eldritch Warmace': 'EK',  'Eldritch Greataxe': 'EK',
+  'Eldritch Crescent Moon Spade': 'MONK',
+  'Eldritch Folio': 'MS',    'Eldritch Tome': 'ED',
+  'Gilded Eldritch Bow': 'RP',
+  'Gilded Eldritch Claymore': 'EK',  'Gilded Eldritch Warmace': 'EK',
+  'Gilded Eldritch Greataxe': 'EK',  'Gilded Eldritch Rod': 'ED',
+  'Gilded Eldritch Wand': 'MS',      'Gilded Eldritch Crescent Moon Spade': 'MONK',
+  // ── FERUMBRAS ─────────────────────────────────────────────────────────────
+  "Ferumbras' Hat": 'MS',    "Ferumbras' Essence": 'MS', 'Ferumbras Statue': 'MS',
+  // ── MAGICIAN ──────────────────────────────────────────────────────────────
+  'Magician Hat': 'MS',      "Magician's Robe": 'MS',
+  // ── OUTROS CLASSE 3 ───────────────────────────────────────────────────────
+  'Royal Crossbow': 'RP',    'Bear Skin': 'EK',
+  'Emerald Sword': 'EK',     'Rift Bow': 'RP',
+  'Rift Crossbow': 'RP',     'Warsinger Bow': 'RP',
+  'The Devileye': 'ED',      'Deepling Staff': 'ED',
+  // ── STAG ──────────────────────────────────────────────────────────────────
+  'Stag Helmet': 'EK',       'Stag Robe': 'MS',         'Stag Plate': 'EK',
+  'Stag Legs': 'EK',         'Stag Shinguards': 'MONK',  'Stag Boots': 'RP',
+  'Stag Footwraps': 'MONK',  'Stag Shield': 'EK',
+  'Refined Stag Shield': 'EK','Stag Scrolls': 'ED',      'Stag Spellbook': 'MS',
+  // ── SPIRITTHORN ───────────────────────────────────────────────────────────
+  'Spiritthorn Helmet': 'MS', 'Spiritthorn Armor': 'MS',
+  'Spiritthorn Ring': 'MS',   'Charged Spiritthorn Ring': 'MS',
+  // ── PRIMAL / ALICORN ──────────────────────────────────────────────────────
+  'Alicorn Headguard': 'RP',                 'Primal Robe of the Vizier': 'MS',
+  'Primal Plate of the Stalwart': 'EK',      'Primal Surcoat of the Swiftstrike': 'RP',
+  'Alicorn Quiver': 'RP',                    'Alicorn Twigs': 'ED',
+  'Alicorn Wand': 'MS',                      'Alicorn Blade': 'EK',
+  'Alicorn Mace': 'EK',                      'Alicorn Battleaxe': 'EK',
+  'Alicorn Bow': 'RP',                       'Alicorn Spellbook': 'MS',
+  'Charged Alicorn Ring': 'RP',              'Alicorn Ring': 'RP',
+  // ── ETHEREAL (MONK) ───────────────────────────────────────────────────────
+  'Ethereal Coned Hat': 'MONK', 'Ethereal Ring': 'MONK', 'Charged Ethereal Ring': 'MONK',
+  // ── ARCANOMANCER (MS) ─────────────────────────────────────────────────────
+  'Arcanomancer Regalia': 'MS',      'Arcanomancer Folio': 'MS',
+  'Arcanomancer Sigil': 'MS',        'Charged Arcanomancer Sigil': 'MS',
+  // ── ARBOREAL (ED) ─────────────────────────────────────────────────────────
+  'Arboreal Crown': 'ED',     'Arboreal Tome': 'ED',
+  'Arboreal Ring': 'ED',      'Charged Arboreal Ring': 'ED',
+  // ── CRYPT ─────────────────────────────────────────────────────────────────
+  'Crypt Strike': 'EK',   'Crypt Breaker': 'EK',  'Crypt Slicer': 'EK',
+  'Crypt Splitter': 'EK', 'Crypt Spine': 'RP',    'Crypt Bile': 'MS',
+  'Crypt Jaw': 'MONK',
+  // ── AMBER ─────────────────────────────────────────────────────────────────
+  'Amber Axe': 'EK',         'Amber Bludgeon': 'EK',   'Amber Bow': 'RP',
+  'Amber Crossbow': 'RP',    'Amber Cudgel': 'EK',     'Amber Greataxe': 'EK',
+  'Amber Kusarigama': 'MONK','Amber Rod': 'ED',         'Amber Sabre': 'EK',
+  'Amber Slayer': 'EK',      'Amber Wand': 'MS',        'Amber Staff': 'EK',
+  // ── ACESSÓRIOS DE MONK ────────────────────────────────────────────────────
+  'Merudri Brooch': 'MONK',           'Enchanted Merudri Brooch': 'MONK',
+  'Enchanted Sleep Shawl': 'MONK',
+}
+
 const item = (name, imageFile, classification, category, set = '') => ({
   name,
   imageUrl: W + imageFile + '.gif',
@@ -7,6 +116,7 @@ const item = (name, imageFile, classification, category, set = '') => ({
   maxTier: classification,
   category,
   set,
+  vocation: ITEM_VOCATIONS[name] ?? 'ALL',
 })
 
 export const ITEMS_DATABASE = [
@@ -181,7 +291,13 @@ export const ITEMS_DATABASE = [
   item('Stag Scrolls',      'Stag_Scrolls',      4, 'misc',     'Stag'),
   item('Stag Spellbook',    'Stag_Spellbook',    4, 'misc',     'Stag'),
 
-  // ── PRIMAL SET / ALICORN (Class 4) ────────────────────────────────────────
+  // ── SPIRITTHORN SET (Class 4) ─────────────────────────────────────────────
+  item('Spiritthorn Helmet',       'Spiritthorn_Helmet',       4, 'armadura',  'Spiritthorn'),
+  item('Spiritthorn Armor',        'Spiritthorn_Armor',        4, 'armadura',  'Spiritthorn'),
+  item('Spiritthorn Ring',         'Spiritthorn_Ring',         4, 'acessório', 'Spiritthorn'),
+  item('Charged Spiritthorn Ring', 'Charged_Spiritthorn_Ring', 4, 'acessório', 'Spiritthorn'),
+
+  // ── PRIMAL SET / ALICORN (Paladin, Class 4) ───────────────────────────────
   item('Alicorn Headguard',                'Alicorn_Headguard',                4, 'armadura', 'Primal'),
   item('Primal Robe of the Vizier',        'Primal_Robe_of_the_Vizier',        4, 'armadura', 'Primal'),
   item('Primal Plate of the Stalwart',     'Primal_Plate_of_the_Stalwart',     4, 'armadura', 'Primal'),
@@ -194,6 +310,77 @@ export const ITEMS_DATABASE = [
   item('Alicorn Battleaxe',                'Alicorn_Battleaxe',                4, 'arma',     'Primal'),
   item('Alicorn Bow',                      'Alicorn_Bow',                      4, 'arma',     'Primal'),
   item('Alicorn Spellbook',                'Alicorn_Spellbook',                4, 'misc',     'Primal'),
+  item('Charged Alicorn Ring',             'Charged_Alicorn_Ring',             4, 'acessório', 'Primal'),
+  item('Alicorn Ring',                     'Alicorn_Ring',                     4, 'acessório', 'Primal'),
+
+  // ── ETHEREAL SET (Monk, Class 4) ──────────────────────────────────────────
+  item('Ethereal Coned Hat',    'Ethereal_Coned_Hat',    4, 'armadura',  'Ethereal'),
+  item('Ethereal Ring',         'Ethereal_Ring',          4, 'acessório', 'Ethereal'),
+  item('Charged Ethereal Ring', 'Charged_Ethereal_Ring',  4, 'acessório', 'Ethereal'),
+
+  // ── ARCANOMANCER SET (Sorcerer, Class 4) ──────────────────────────────────
+  item('Arcanomancer Regalia',       'Arcanomancer_Regalia',       4, 'armadura',  'Arcanomancer'),
+  item('Arcanomancer Folio',         'Arcanomancer_Folio',         4, 'misc',      'Arcanomancer'),
+  item('Arcanomancer Sigil',         'Arcanomancer_Sigil',         4, 'acessório', 'Arcanomancer'),
+  item('Charged Arcanomancer Sigil', 'Charged_Arcanomancer_Sigil', 4, 'acessório', 'Arcanomancer'),
+
+  // ── ARBOREAL SET (Druid, Class 4) ─────────────────────────────────────────
+  item('Arboreal Crown',        'Arboreal_Crown',         4, 'armadura',  'Arboreal'),
+  item('Arboreal Tome',         'Arboreal_Tome',          4, 'misc',      'Arboreal'),
+  item('Arboreal Ring',         'Arboreal_Ring',          4, 'acessório', 'Arboreal'),
+  item('Charged Arboreal Ring', 'Charged_Arboreal_Ring',  4, 'acessório', 'Arboreal'),
+
+  // ── CRYPT SET (Class 4, Summer Update 2025) ───────────────────────────────
+  item('Crypt Strike',  'Crypt_Strike',  4, 'arma', 'Crypt'),
+  item('Crypt Breaker', 'Crypt_Breaker', 4, 'arma', 'Crypt'),
+  item('Crypt Slicer',  'Crypt_Slicer',  4, 'arma', 'Crypt'),
+  item('Crypt Splitter','Crypt_Splitter',4, 'arma', 'Crypt'),
+  item('Crypt Spine',   'Crypt_Spine',   4, 'arma', 'Crypt'),
+  item('Crypt Bile',    'Crypt_Bile',    4, 'arma', 'Crypt'),
+  item('Crypt Jaw',     'Crypt_Jaw',     4, 'arma', 'Crypt'),
+
+  // ── AMBER WEAPONS SERIES (Class 4, Summer Update 2024) ────────────────────
+  item('Amber Axe',         'Amber_Axe',         4, 'arma', 'Amber'),
+  item('Amber Bludgeon',    'Amber_Bludgeon',    4, 'arma', 'Amber'),
+  item('Amber Bow',         'Amber_Bow',         4, 'arma', 'Amber'),
+  item('Amber Crossbow',    'Amber_Crossbow',    4, 'arma', 'Amber'),
+  item('Amber Cudgel',      'Amber_Cudgel',      4, 'arma', 'Amber'),
+  item('Amber Greataxe',    'Amber_Greataxe',    4, 'arma', 'Amber'),
+  item('Amber Kusarigama',  'Amber_Kusarigama',  4, 'arma', 'Amber'),
+  item('Amber Rod',         'Amber_Rod',         4, 'arma', 'Amber'),
+  item('Amber Sabre',       'Amber_Sabre',       4, 'arma', 'Amber'),
+  item('Amber Slayer',      'Amber_Slayer',      4, 'arma', 'Amber'),
+  item('Amber Wand',        'Amber_Wand',        4, 'arma', 'Amber'),
+
+  // ── OUTROS (Amber Staff — item antigo, fora da série) ──────────────────────
+  item('Amber Staff', 'Amber_Staff', 2, 'arma', 'Outros'),
+
+  // ── ACESSÓRIOS PRIMAL / MONK ──────────────────────────────────────────────
+  item('Merudri Brooch',              'Merudri_Brooch',              3, 'acessório', 'Outros'),
+  item('Enchanted Merudri Brooch',    'Enchanted_Merudri_Brooch',    3, 'acessório', 'Outros'),
+  item('Enchanted Theurgic Amulet',   'Enchanted_Theurgic_Amulet',   3, 'acessório', 'Outros'),
+  item('Enchanted Sleep Shawl',       'Enchanted_Sleep_Shawl',       3, 'acessório', 'Outros'),
+  item('Enchanted Pendulet',          'Enchanted_Pendulet',          3, 'acessório', 'Outros'),
+
+  // ── AMULETOS BiS ──────────────────────────────────────────────────────────
+  item('Stone Skin Amulet',    'Stone_Skin_Amulet',    0, 'acessório', 'Outros'),
+  item('Bonfire Amulet',       'Bonfire_Amulet',       0, 'acessório', 'Outros'),
+  item('Glacier Amulet',       'Glacier_Amulet',       0, 'acessório', 'Outros'),
+  item('Sacred Tree Amulet',   'Sacred_Tree_Amulet',   0, 'acessório', 'Outros'),
+  item('Shockwave Amulet',     'Shockwave_Amulet',     0, 'acessório', 'Outros'),
+  item('Necklace of the Deep', 'Necklace_of_the_Deep', 0, 'acessório', 'Outros'),
+  item('Amulet of Loss',       'Amulet_of_Loss',       0, 'acessório', 'Outros'),
+
+  // ── ANÉIS BiS ─────────────────────────────────────────────────────────────
+  item('Ring of Healing',    'Ring_of_Healing',    0, 'acessório', 'Outros'),
+  item('Energy Ring',        'Energy_Ring',        0, 'acessório', 'Outros'),
+  item('Time Ring',          'Time_Ring',          0, 'acessório', 'Outros'),
+  item('Might Ring',         'Might_Ring',         0, 'acessório', 'Outros'),
+  item('Stealth Ring',       'Stealth_Ring',       0, 'acessório', 'Outros'),
+  item('Club Ring',          'Club_Ring',          0, 'acessório', 'Outros'),
+  item('Prismatic Ring',     'Prismatic_Ring',     0, 'acessório', 'Outros'),
+  item('Ring of Red Plasma', 'Ring_of_Red_Plasma', 2, 'acessório', 'Outros'),
+  item('Ring of Souls',      'Ring_of_Souls',      3, 'acessório', 'Outros'),
 ]
 
 export const getItemByName = (name) =>
