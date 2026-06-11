@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash2, ShoppingCart, History, LayoutGrid, List, Copy, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Pencil, Trash2, ShoppingCart, History, LayoutGrid, List, Copy, ChevronUp, ChevronDown, ClipboardList } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatDate, formatRC, CATEGORY_FALLBACK, SET_COLORS, TIER_COLORS } from '../../utils/helpers'
 import Modal from '../UI/Modal'
@@ -123,10 +123,16 @@ function ItemCard({ it, onEdit, onDelete, onSell, onHistory, onClone }) {
       </div>
 
       <div className="flex items-center justify-center gap-0.5 px-2 pb-2.5 border-t" style={{ borderColor: '#3a3050' }}>
-        {it.quantity > 0 && (
-          <button onClick={() => onSell(it)} title="Vender"
+        {it.quantity > 0 ? (
+          <button onClick={() => onSell(it)} title="Registrar venda"
             className="p-1.5 rounded-lg hover:bg-green-900/40 text-gray-500 hover:text-green-400 transition-colors">
             <ShoppingCart size={13} />
+          </button>
+        ) : (
+          <button onClick={() => onSell(it)} title="Registrar troca / venda retroativa"
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: '#9333ea' }}>
+            <ClipboardList size={13} />
           </button>
         )}
         {(it.sales?.length > 0 || it.priceHistory?.length > 0) && (
@@ -157,7 +163,9 @@ export default function ItemsModule() {
   const [showForm,    _setShowForm]   = useState(() => sessionStorage.getItem('items_modal') === '1')
   const setShowForm = (v) => { v ? sessionStorage.setItem('items_modal','1') : sessionStorage.removeItem('items_modal'); _setShowForm(v) }
   const [editing,     setEditing]     = useState(null)
-  const [listCopied,  setListCopied]  = useState(false)
+  const [listCopied,    setListCopied]    = useState(false)
+  const [showCopyModal, setShowCopyModal] = useState(false)
+  const [copyServers,   setCopyServers]   = useState([])
   const [selling,     setSelling]     = useState(null)
   const [showHistory, setShowHistory] = useState(null)
   const [filters, setFilters] = useState({ server: '', category: '', tier: '', classification: '', search: '' })
@@ -185,24 +193,37 @@ export default function ItemsModule() {
   }, [items, filters])
 
   const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
+    const cmp = (a, b) => {
       let va, vb
       switch (sortKey) {
-        case 'name':      va = a.name;  vb = b.name; break
-        case 'server':    va = a.server; vb = b.server; break
+        case 'name':      va = a.name;    vb = b.name;    break
+        case 'server':    va = a.server;  vb = b.server;  break
         case 'quantity':  va = a.quantity; vb = b.quantity; break
         case 'buyRC':     va = a.buyPriceRC  || 0; vb = b.buyPriceRC  || 0; break
         case 'buyPIX':    va = a.buyPricePIX || 0; vb = b.buyPricePIX || 0; break
         case 'sellRC':    va = a.sellPriceRC  || 0; vb = b.sellPriceRC  || 0; break
         case 'sellPIX':   va = a.sellPricePIX || 0; vb = b.sellPricePIX || 0; break
-        case 'profitRC':  va = (a.sellPriceRC  - a.buyPriceRC)  * a.quantity; vb = (b.sellPriceRC  - b.buyPriceRC)  * b.quantity; break
-        case 'profitPIX': va = (a.sellPricePIX - a.buyPricePIX) * a.quantity; vb = (b.sellPricePIX - b.buyPricePIX) * b.quantity; break
+        case 'profitRC':  va = ((a.sellPriceRC  || 0) - (a.buyPriceRC  || 0)) * a.quantity; vb = ((b.sellPriceRC  || 0) - (b.buyPriceRC  || 0)) * b.quantity; break
+        case 'profitPIX': va = ((a.sellPricePIX || 0) - (a.buyPricePIX || 0)) * a.quantity; vb = ((b.sellPricePIX || 0) - (b.buyPricePIX || 0)) * b.quantity; break
         default:          va = a.dateEntry || ''; vb = b.dateEntry || ''
       }
       if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb) : vb.localeCompare(va)
       return sortDir === 'asc' ? va - vb : vb - va
-    })
+    }
+
+    // Quando ordena por quantidade, não força separação (faz sentido ver tudo junto)
+    if (sortKey === 'quantity') return [...filtered].sort(cmp)
+
+    // Sempre: em estoque no topo, sem estoque embaixo — cada grupo ordenado pelo critério do usuário
+    const inStock    = filtered.filter(it => it.quantity > 0).sort(cmp)
+    const outOfStock = filtered.filter(it => it.quantity === 0).sort(cmp)
+    return [...inStock, ...outOfStock]
   }, [filtered, sortKey, sortDir])
+
+  const soldSeparatorIdx = useMemo(() => {
+    if (sortKey === 'quantity') return -1
+    return sorted.findIndex(it => it.quantity === 0)
+  }, [sorted, sortKey])
 
   const totals = useMemo(() => {
     const inStock = filtered.filter(i => i.quantity > 0)
@@ -226,14 +247,44 @@ export default function ItemsModule() {
     addItem({ ...it, quantity: 1, sales: [], priceHistory: [], dateEntry: new Date().toISOString() })
   }
 
-  const handleCopyList = () => {
-    const lines = items
-      .slice()
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(it => `${it.name} - ${it.server}`)
-      .join('\n')
-    navigator.clipboard.writeText(lines).then(() => {
+  const VOC_ORDER = [
+    { key: 'RP',   label: '🏹 *RP:*' },
+    { key: 'ED',   label: '🧊 *ED:*' },
+    { key: 'MS',   label: '🔥 *MS:*' },
+    { key: 'EK',   label: '⚔️ *EK:*' },
+    { key: 'MONK', label: '🥋 *MONK:*' },
+    { key: 'ALL',  label: '📿 *Outros:*' },
+  ]
+
+  const handleCopyList = () => { setCopyServers([]); setShowCopyModal(true) }
+
+  const toggleCopyServer = (s) =>
+    setCopyServers(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
+
+  const executeCopy = () => {
+    const rate = settings.rcRate || 0.087
+    const pool = items.filter(it =>
+      it.quantity > 0 && (copyServers.length === 0 || copyServers.includes(it.server))
+    )
+    const getPrice = (it) => (it.sellPricePIX || 0) + (it.sellPriceRC || 0) * rate
+
+    const sections = VOC_ORDER
+      .map(({ key, label }) => {
+        const sorted = pool
+          .filter(it => (it.vocation ?? 'ALL') === key)
+          .sort((a, b) => getPrice(b) - getPrice(a))
+        const deduped = [...new Map(sorted.map(it => [it.name, it])).values()]
+        return deduped.length > 0 ? `${label} ${deduped.map(it => it.name).join(' • ')}` : null
+      })
+      .filter(Boolean)
+
+    if (!sections.length) { setShowCopyModal(false); return }
+
+    const text = `🔥📦 *ITENS DISPONÍVEIS* 📦🔥\n\n${sections.join('\n\n')}`
+
+    navigator.clipboard.writeText(text).then(() => {
       setListCopied(true)
+      setShowCopyModal(false)
       setTimeout(() => setListCopied(false), 2500)
     })
   }
@@ -324,13 +375,36 @@ export default function ItemsModule() {
       {viewMode === 'cards' && (
         <div>
           {sorted.length === 0 && <p className="text-gray-500 text-sm py-8 text-center">Nenhum item encontrado.</p>}
-          <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))' }}>
-            {sorted.map(it => (
-              <ItemCard key={it.id} it={it}
-                onEdit={setEditing} onDelete={deleteItem}
-                onSell={setSelling} onHistory={setShowHistory} onClone={handleClone} />
-            ))}
-          </div>
+          {/* In-stock group */}
+          {sorted.length > 0 && (
+            <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))' }}>
+              {(soldSeparatorIdx === -1 ? sorted : sorted.slice(0, soldSeparatorIdx === -1 ? sorted.length : soldSeparatorIdx)).map(it => (
+                <ItemCard key={it.id} it={it}
+                  onEdit={setEditing} onDelete={deleteItem}
+                  onSell={setSelling} onHistory={setShowHistory} onClone={handleClone} />
+              ))}
+            </div>
+          )}
+          {/* Separator */}
+          {soldSeparatorIdx > 0 && (
+            <div className="flex items-center gap-3 my-3">
+              <div className="flex-1 border-t border-dashed" style={{ borderColor: '#4b2d6e' }} />
+              <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#ef4444', backgroundColor: '#3b0a0a', border: '1px solid #7f1d1d', borderRadius: 999, padding: '2px 10px' }}>
+                Sem estoque · {sorted.length - soldSeparatorIdx}
+              </span>
+              <div className="flex-1 border-t border-dashed" style={{ borderColor: '#4b2d6e' }} />
+            </div>
+          )}
+          {/* Out-of-stock group */}
+          {soldSeparatorIdx > 0 && (
+            <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))' }}>
+              {sorted.slice(soldSeparatorIdx).map(it => (
+                <ItemCard key={it.id} it={it}
+                  onEdit={setEditing} onDelete={deleteItem}
+                  onSell={setSelling} onHistory={setShowHistory} onClone={handleClone} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -367,10 +441,24 @@ export default function ItemsModule() {
               {sorted.length === 0 && (
                 <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-500">Nenhum item encontrado.</td></tr>
               )}
-              {sorted.map(it => {
+              {sorted.map((it, idx) => {
                 const sc = SET_COLORS[it.set] ?? SET_COLORS['Outros']
                 return (
-                  <tr key={it.id} className="border-t" style={{ borderColor: '#3a3050', opacity: it.quantity === 0 ? 0.55 : 1 }}>
+                  <React.Fragment key={it.id}>
+                  {idx === soldSeparatorIdx && soldSeparatorIdx > 0 && (
+                    <tr>
+                      <td colSpan={7} style={{ padding: '4px 16px', backgroundColor: '#110816' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div style={{ flex: 1, borderTop: '1px solid #3a2040' }} />
+                          <span style={{ fontSize: 11, fontWeight: 600, color: '#ef4444', backgroundColor: '#3b0a0a', border: '1px solid #7f1d1d', borderRadius: 999, padding: '2px 10px' }}>
+                            Sem estoque · {sorted.length - soldSeparatorIdx}
+                          </span>
+                          <div style={{ flex: 1, borderTop: '1px solid #3a2040' }} />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="border-t" style={{ borderColor: '#3a3050', opacity: it.quantity === 0 ? 0.55 : 1 }}>
                     <td className="px-4 py-3" style={{ borderLeft: `3px solid ${sc.primary}` }}>
                       <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -408,10 +496,16 @@ export default function ItemsModule() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        {it.quantity > 0 && (
-                          <button onClick={() => setSelling(it)} title="Vender"
+                        {it.quantity > 0 ? (
+                          <button onClick={() => setSelling(it)} title="Registrar venda"
                             className="p-1.5 rounded hover:bg-green-900/40 text-gray-400 hover:text-green-400 transition-colors">
                             <ShoppingCart size={14} />
+                          </button>
+                        ) : (
+                          <button onClick={() => setSelling(it)} title="Registrar troca / venda retroativa"
+                            className="p-1.5 rounded transition-colors"
+                            style={{ color: '#9333ea' }}>
+                            <ClipboardList size={14} />
                           </button>
                         )}
                         {(it.sales?.length > 0 || it.priceHistory?.length > 0) && (
@@ -435,6 +529,7 @@ export default function ItemsModule() {
                       </div>
                     </td>
                   </tr>
+                  </React.Fragment>
                 )
               })}
             </tbody>
@@ -466,14 +561,15 @@ export default function ItemsModule() {
       {editing && (
         <Modal title={`Editar — ${editing.name}`} onClose={() => setEditing(null)} wide>
           <ItemForm initial={editing} servers={settings.servers}
-            onSubmit={(data) => { updateItem(editing.id, data); setEditing(null) }}
+            onSubmit={async (data) => { await updateItem(editing.id, data); setEditing(null) }}
             onClose={() => setEditing(null)} />
         </Modal>
       )}
       {selling && (
         <ItemSaleModal item={selling}
-          onConfirm={(sale) => {
-            sellItem(selling.id, sale)
+          onConfirm={async (sale) => {
+            const scrollY = window.scrollY
+            await sellItem(selling.id, sale)
             if (sale.syncCoins && (sale.soldForRC || 0) > 0) {
               addCoinTransaction({
                 type: 'entrada',
@@ -484,9 +580,58 @@ export default function ItemsModule() {
                 pricePerK: 0, totalPaid: 0,
               })
             }
+            if (sale.tradeItemData) {
+              await addItem({
+                ...sale.tradeItemData,
+                server: selling.server,
+                observation: `Recebido em troca de ${selling.name}`,
+                dateEntry: new Date().toISOString(),
+              })
+            }
             setSelling(null)
+            requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' }))
           }}
           onClose={() => setSelling(null)} />
+      )}
+      {showCopyModal && (
+        <Modal title="Copiar lista" onClose={() => setShowCopyModal(false)}>
+          <div className="space-y-3 pt-1">
+            <p className="text-xs text-gray-500">Selecione os servidores (vários ao mesmo tempo):</p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setCopyServers([])}
+                className="px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                style={{
+                  backgroundColor: copyServers.length === 0 ? '#3730a3' : '#2a2035',
+                  border: `1px solid ${copyServers.length === 0 ? '#6366f1' : '#3a3050'}`,
+                  color: copyServers.length === 0 ? '#fff' : '#6b7280',
+                }}>
+                🌐 Todos
+              </button>
+              {settings.servers.map(s => (
+                <button key={s}
+                  onClick={() => toggleCopyServer(s)}
+                  className="px-3 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  style={{
+                    backgroundColor: copyServers.includes(s) ? '#5b21b6' : '#2a2035',
+                    border: `1px solid ${copyServers.includes(s) ? '#7c3aed' : '#3a3050'}`,
+                    color: copyServers.includes(s) ? '#fff' : '#6b7280',
+                  }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={executeCopy}
+              className="w-full py-3 rounded-xl text-sm font-semibold text-white"
+              style={{ backgroundColor: '#7c3aed' }}>
+              📋 Copiar{copyServers.length > 0 ? ` (${copyServers.join(', ')})` : ' (todos os servidores)'}
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2 text-center">
+            Agrupado por vocação · do mais caro ao mais barato · sem duplicatas
+          </p>
+        </Modal>
       )}
       {showHistory && (
         <Modal title={`Histórico — ${showHistory.name}`} onClose={() => setShowHistory(null)}>
