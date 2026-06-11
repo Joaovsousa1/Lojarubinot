@@ -77,8 +77,8 @@ export const ITEM_VOCATIONS = {
   'Stag Footwraps': 'MONK',  'Stag Shield': 'EK',
   'Refined Stag Shield': 'EK','Stag Scrolls': 'ED',      'Stag Spellbook': 'MS',
   // ── SPIRITTHORN ───────────────────────────────────────────────────────────
-  'Spiritthorn Helmet': 'MS', 'Spiritthorn Armor': 'MS',
-  'Spiritthorn Ring': 'MS',   'Charged Spiritthorn Ring': 'MS',
+  'Spiritthorn Helmet': 'EK', 'Spiritthorn Armor': 'EK',
+  'Spiritthorn Ring': 'EK',   'Charged Spiritthorn Ring': 'EK',
   // ── PRIMAL / ALICORN ──────────────────────────────────────────────────────
   'Alicorn Headguard': 'RP',                 'Primal Robe of the Vizier': 'MS',
   'Primal Plate of the Stalwart': 'EK',      'Primal Surcoat of the Swiftstrike': 'RP',
