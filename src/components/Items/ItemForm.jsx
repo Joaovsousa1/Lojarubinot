@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { searchItems, getItemByName } from '../../data/itemsDatabase'
+import { searchItems, getItemByName, ITEM_VOCATIONS } from '../../data/itemsDatabase'
 import { buildImageUrl, CATEGORY_FALLBACK, formatRC, formatCurrency } from '../../utils/helpers'
 import { useApp } from '../../context/AppContext'
 import ItemImage from '../UI/ItemImage'
@@ -79,7 +79,12 @@ export default function ItemForm({ initial, servers, onSubmit, onClose }) {
   const { settings } = useApp()
   const rcRate = settings?.rcRate || 0
   const [form, setFormRaw] = useState(() => {
-    if (initial) return { ...initial }
+    if (initial) {
+      const resolvedVocation = (initial.vocation && initial.vocation !== 'ALL')
+        ? initial.vocation
+        : (ITEM_VOCATIONS[initial.name] ?? 'ALL')
+      return { ...initial, vocation: resolvedVocation }
+    }
     const draft = loadDraft()
     return draft ?? { ...EMPTY, server: servers[0] ?? '' }
   })
