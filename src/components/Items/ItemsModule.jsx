@@ -7,6 +7,7 @@ import TierBadge from '../UI/TierBadge'
 import ItemImage from '../UI/ItemImage'
 import ItemForm from './ItemForm'
 import ItemSaleModal from './ItemSaleModal'
+import { getItemByName } from '../../data/itemsDatabase'
 
 function PriceCell({ rc, pix }) {
   if (!rc && !pix) return <span className="text-gray-600">—</span>
@@ -268,10 +269,16 @@ export default function ItemsModule() {
     )
     const getPrice = (it) => (it.sellPricePIX || 0) + (it.sellPriceRC || 0) * rate
 
+    const getVoc = (it) => {
+      const v = it.vocation ?? 'ALL'
+      if (v !== 'ALL') return v
+      return getItemByName(it.name)?.vocation ?? 'ALL'
+    }
+
     const sections = VOC_ORDER
       .map(({ key, label }) => {
         const sorted = pool
-          .filter(it => (it.vocation ?? 'ALL') === key)
+          .filter(it => getVoc(it) === key)
           .sort((a, b) => getPrice(b) - getPrice(a))
         const deduped = [...new Map(sorted.map(it => [it.name, it])).values()]
         return deduped.length > 0 ? `${label} ${deduped.map(it => it.name).join(' • ')}` : null
