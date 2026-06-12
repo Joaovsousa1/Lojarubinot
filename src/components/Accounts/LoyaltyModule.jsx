@@ -455,25 +455,27 @@ export default function LoyaltyModule() {
           <div className="text-sm">Nenhuma conta encontrada para "{search}".</div>
         </div>
       ) : (
-        <div className="space-y-1.5">
-          {available.map(renderCard)}
-        </div>
-
-        {sold.length > 0 && (
-          <div>
-            <div className="flex items-center gap-3 my-3">
-              <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
-              <span className="text-xs font-semibold px-3 py-1 rounded-full"
-                style={{ backgroundColor: '#14532d22', color: '#4ade80', border: '1px solid #16a34a33' }}>
-                Vendidas · {sold.length}
-              </span>
-              <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
-            </div>
-            <div className="space-y-1.5 opacity-70">
-              {sold.map(renderCard)}
-            </div>
+        <>
+          <div className="space-y-1.5">
+            {available.map(renderCard)}
           </div>
-        )}
+
+          {sold.length > 0 && (
+            <div>
+              <div className="flex items-center gap-3 my-3">
+                <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
+                <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                  style={{ backgroundColor: '#14532d22', color: '#4ade80', border: '1px solid #16a34a33' }}>
+                  Vendidas · {sold.length}
+                </span>
+                <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
+              </div>
+              <div className="space-y-1.5 opacity-70">
+                {sold.map(renderCard)}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {showForm && (
