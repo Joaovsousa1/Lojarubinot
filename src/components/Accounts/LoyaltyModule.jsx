@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { Plus, Pencil, Trash2, Star, DollarSign, Search, TrendingUp, Users, CheckCircle } from 'lucide-react'
+import { Plus, Pencil, Trash2, Star, DollarSign, Search } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, formatDate, STATUS_COLORS } from '../../utils/helpers'
 import Modal from '../UI/Modal'
@@ -59,21 +59,6 @@ function StatusBadge({ status }) {
   )
 }
 
-function StatCard({ icon: Icon, label, value, color, sub }) {
-  return (
-    <div className="rounded-2xl p-4 flex items-center gap-3"
-      style={{ backgroundColor: '#1e1630', border: '1px solid rgba(124,58,237,0.18)', boxShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
-      <div className="p-2.5 rounded-xl shrink-0" style={{ backgroundColor: `${color}22`, border: `1px solid ${color}44` }}>
-        <Icon size={16} style={{ color }} />
-      </div>
-      <div className="min-w-0">
-        <div className="text-xs font-medium mb-0.5" style={{ color: '#64748b' }}>{label}</div>
-        <div className="text-lg font-black leading-none" style={{ color }}>{value}</div>
-        {sub && <div className="text-[10px] mt-0.5" style={{ color: '#475569' }}>{sub}</div>}
-      </div>
-    </div>
-  )
-}
 
 function LoyaltyForm({ initial, servers, onSubmit, onClose }) {
   const [form, setForm] = useState(initial
@@ -270,113 +255,89 @@ function SellModal({ acc, onClose, onConfirm }) {
 }
 
 function LoyaltyCard({ acc, onEdit, onDelete, onSell }) {
-  const isSold  = acc.status === 'vendida'
-  const profit  = (acc.sellPrice || 0) - (acc.buyPrice || 0)
-  const info    = getLoyaltyInfo(acc.loyaltyPoints ?? 0)
+  const isSold = acc.status === 'vendida'
+  const profit = (acc.sellPrice || 0) - (acc.buyPrice || 0)
+  const info   = getLoyaltyInfo(acc.loyaltyPoints ?? 0)
 
   return (
-    <div className="rounded-2xl overflow-hidden flex flex-col transition-transform duration-150 hover:scale-[1.02]"
+    <div className="rounded-xl px-4 py-3 flex items-center gap-4"
       style={{
         backgroundColor: '#1e1630',
-        border: `1px solid ${isSold ? '#16a34a30' : '#7c3aed30'}`,
-        opacity: isSold ? 0.75 : 1,
+        border: `1px solid ${isSold ? '#16a34a22' : '#7c3aed22'}`,
+        opacity: isSold ? 0.7 : 1,
       }}>
 
-      {/* Topo colorido com loyalty em destaque */}
-      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-2"
-        style={{ backgroundColor: isSold ? '#0d1f0d' : '#1a0f2e' }}>
-        <div>
-          {info.bonus > 0 ? (
-            <>
-              <div className="text-2xl font-black leading-none" style={{ color: '#c084fc' }}>
-                +{info.bonus} <span className="text-base font-bold" style={{ color: '#a78bfa' }}>skill</span>
-              </div>
-              <div className="text-xs mt-1" style={{ color: '#6d4aab' }}>{info.title}</div>
-            </>
-          ) : (
-            <div className="text-sm font-semibold text-gray-500">Sem loyalty</div>
-          )}
-        </div>
-        <div className="flex flex-col items-end gap-1.5">
+      {/* Loyalty badge */}
+      <div className="shrink-0 w-14 text-center">
+        {info.bonus > 0 ? (
+          <>
+            <div className="text-xl font-black leading-none" style={{ color: '#c084fc' }}>+{info.bonus}</div>
+            <div className="text-[10px] font-semibold" style={{ color: '#6d4aab' }}>skill</div>
+          </>
+        ) : (
+          <div className="text-[11px] text-gray-600">— pts</div>
+        )}
+        {acc.loyaltyPoints > 0 && (
+          <div className="text-[9px] mt-0.5" style={{ color: '#4b3a70' }}>{formatNumber(acc.loyaltyPoints)} pts</div>
+        )}
+      </div>
+
+      {/* Info principal */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-semibold text-white truncate">{acc.email || '—'}</span>
           <StatusBadge status={acc.status} />
-          {acc.loyaltyPoints > 0 && (
-            <span className="text-[11px] font-medium" style={{ color: '#6d4aab' }}>
-              {formatNumber(acc.loyaltyPoints)} pts
+        </div>
+        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+          {acc.server && acc.server !== 'Todos' && (
+            <span className="text-xs text-gray-600">{acc.server}</span>
+          )}
+          {acc.vipDays > 0 && (
+            <span className="text-[11px] px-1.5 py-0.5 rounded font-medium"
+              style={{ backgroundColor: '#78350f22', color: '#fbbf24', border: '1px solid #78350f33' }}>
+              {formatNumber(acc.vipDays)}d VIP
             </span>
+          )}
+          {acc.notes && (
+            <span className="text-[11px] text-gray-600 italic truncate max-w-[140px]">{acc.notes}</span>
           )}
         </div>
       </div>
 
-      {/* Corpo */}
-      <div className="px-4 py-3 flex flex-col gap-2.5 flex-1">
-
-        {/* Email + server */}
-        <div>
-          <div className="text-sm font-semibold text-white truncate">{acc.email || '—'}</div>
-          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            {acc.server && acc.server !== 'Todos' && (
-              <span className="text-xs text-gray-500">{acc.server}</span>
-            )}
-            {acc.vipDays > 0 && (
-              <span className="text-xs px-1.5 py-0.5 rounded font-medium"
-                style={{ backgroundColor: '#78350f22', color: '#fbbf24', border: '1px solid #78350f44' }}>
-                {formatNumber(acc.vipDays)}d VIP
-              </span>
-            )}
-          </div>
+      {/* Preços */}
+      <div className="shrink-0 text-right">
+        <div className="text-xs font-bold text-white">
+          {acc.sellPrice > 0 ? formatCurrency(acc.sellPrice) : <span className="text-gray-600">—</span>}
         </div>
-
-        {/* Preços */}
-        <div className="rounded-xl px-3 py-2.5 mt-auto"
-          style={{ backgroundColor: '#130e1e', border: '1px solid #2a2040' }}>
-          <div className="grid grid-cols-3 gap-1 text-center">
-            <div>
-              <div className="text-[10px] text-gray-600 mb-0.5">Compra</div>
-              <div className="text-xs font-semibold text-gray-300">{formatCurrency(acc.buyPrice)}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-gray-600 mb-0.5">Venda</div>
-              <div className="text-xs font-semibold text-white">
-                {acc.sellPrice > 0 ? formatCurrency(acc.sellPrice) : <span className="text-gray-600">—</span>}
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-gray-600 mb-0.5">Lucro</div>
-              <div className="text-xs font-bold"
-                style={{ color: isSold ? (profit >= 0 ? '#4ade80' : '#f87171') : '#374151' }}>
-                {isSold ? formatCurrency(profit) : '—'}
-              </div>
-            </div>
+        {isSold && (
+          <div className="text-[11px] font-semibold mt-0.5"
+            style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>
+            {profit >= 0 ? '+' : ''}{formatCurrency(profit)}
           </div>
-        </div>
-
-        {isSold && acc.dateSold && (
-          <div className="text-[10px] text-gray-600">Vendida em {formatDate(acc.dateSold)}</div>
         )}
-
-        {acc.notes && (
-          <div className="text-xs text-gray-600 italic truncate">{acc.notes}</div>
+        {!isSold && acc.buyPrice > 0 && (
+          <div className="text-[10px] text-gray-600">{formatCurrency(acc.buyPrice)} compra</div>
         )}
       </div>
 
       {/* Ações */}
-      <div className="px-3 pb-3 flex gap-2">
+      <div className="shrink-0 flex items-center gap-1">
         {!isSold && (
-          <button onClick={onSell}
-            className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-bold"
-            style={{ backgroundColor: '#15803d', color: '#fff' }}>
-            <DollarSign size={12} /> Vender
+          <button onClick={onSell} title="Marcar como vendida"
+            className="p-1.5 rounded-lg transition-colors hover:bg-green-900/40"
+            style={{ color: '#4ade80' }}>
+            <DollarSign size={14} />
           </button>
         )}
-        <button onClick={onEdit}
-          className="flex-1 flex items-center justify-center gap-1 py-2 rounded-xl text-xs font-medium"
-          style={{ backgroundColor: '#2d1b5e', color: '#c084fc', border: '1px solid #4c1d95' }}>
-          <Pencil size={12} /> Editar
+        <button onClick={onEdit} title="Editar"
+          className="p-1.5 rounded-lg transition-colors hover:bg-purple-900/40"
+          style={{ color: '#a78bfa' }}>
+          <Pencil size={14} />
         </button>
-        <button onClick={onDelete}
-          className="py-2 px-3 rounded-xl text-xs"
-          style={{ backgroundColor: '#1a1025', color: '#6b7280', border: '1px solid #2a2040' }}>
-          <Trash2 size={12} />
+        <button onClick={onDelete} title="Excluir"
+          className="p-1.5 rounded-lg transition-colors hover:bg-red-900/40"
+          style={{ color: '#6b7280' }}>
+          <Trash2 size={14} />
         </button>
       </div>
     </div>
@@ -435,35 +396,23 @@ export default function LoyaltyModule() {
   return (
     <div className="space-y-6">
 
-      {/* Header principal */}
-      <div className="rounded-2xl p-5"
-        style={{ backgroundColor: '#1e1630', border: '1px solid rgba(124,58,237,0.2)', boxShadow: '0 4px 24px rgba(0,0,0,0.3)' }}>
-        <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl" style={{ backgroundColor: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)' }}>
-              <Star size={18} style={{ color: '#a78bfa' }} />
-            </div>
-            <div>
-              <h2 className="text-lg font-black text-white">Contas Fidelidade</h2>
-              <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>
-                {loyaltyAccounts.length} conta{loyaltyAccounts.length !== 1 ? 's' : ''} cadastrada{loyaltyAccounts.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-          </div>
-          <button onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-            style={{ backgroundColor: '#7c3aed', boxShadow: '0 0 16px rgba(124,58,237,0.35)' }}>
-            <Plus size={15} /> Nova conta
-          </button>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Star size={16} style={{ color: '#a78bfa' }} />
+          <span className="text-sm font-semibold text-white">Contas Fidelidade</span>
+          <span className="text-xs" style={{ color: '#4b5563' }}>
+            {stats.available} disponíveis · {stats.sold} vendidas
+            {stats.monthProfit > 0 && (
+              <span style={{ color: '#4ade80' }}> · +{formatCurrency(stats.monthProfit)} este mês</span>
+            )}
+          </span>
         </div>
-
-        {/* Stats cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard icon={Users}       label="Disponíveis"  value={stats.available}           color="#a78bfa" />
-          <StatCard icon={CheckCircle} label="Vendidas"     value={stats.sold}                color="#4ade80" />
-          <StatCard icon={Star}        label="Este mês"     value={stats.thisMonth}           color="#fbbf24" sub="vendidas" />
-          <StatCard icon={TrendingUp}  label="Lucro mês"    value={formatCurrency(stats.monthProfit)} color={stats.monthProfit >= 0 ? '#4ade80' : '#f87171'} sub={stats.totalProfit > 0 ? `Total: ${formatCurrency(stats.totalProfit)}` : undefined} />
-        </div>
+        <button onClick={() => setShowForm(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold text-white shrink-0"
+          style={{ backgroundColor: '#7c3aed' }}>
+          <Plus size={14} /> Nova conta
+        </button>
       </div>
 
       {/* Barra de busca e filtros */}
@@ -506,31 +455,25 @@ export default function LoyaltyModule() {
           <div className="text-sm">Nenhuma conta encontrada para "{search}".</div>
         </div>
       ) : (
-        <div className="space-y-8">
-          {/* Em estoque */}
-          {available.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {available.map(renderCard)}
-            </div>
-          )}
-
-          {/* Separador vendidas */}
-          {sold.length > 0 && (
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
-                <span className="text-xs font-semibold px-3 py-1 rounded-full"
-                  style={{ backgroundColor: '#14532d22', color: '#4ade80', border: '1px solid #16a34a33' }}>
-                  Vendidas · {sold.length}
-                </span>
-                <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 opacity-70">
-                {sold.map(renderCard)}
-              </div>
-            </div>
-          )}
+        <div className="space-y-1.5">
+          {available.map(renderCard)}
         </div>
+
+        {sold.length > 0 && (
+          <div>
+            <div className="flex items-center gap-3 my-3">
+              <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
+              <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                style={{ backgroundColor: '#14532d22', color: '#4ade80', border: '1px solid #16a34a33' }}>
+                Vendidas · {sold.length}
+              </span>
+              <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
+            </div>
+            <div className="space-y-1.5 opacity-70">
+              {sold.map(renderCard)}
+            </div>
+          </div>
+        )}
       )}
 
       {showForm && (
