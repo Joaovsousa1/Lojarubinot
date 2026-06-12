@@ -125,7 +125,7 @@ export default function MonthlyReport() {
     const totalQty     = sales.reduce((s, sale) => s + (sale.quantity  || 1), 0)
     const totalRC      = sales.reduce((s, sale) => s + (sale.soldForRC  || 0), 0)
     const totalPIX     = sales.reduce((s, sale) => s + (sale.soldForPIX || 0), 0)
-    const profitRC  = 0
+    const profitRC  = sales.reduce((s, sale) => s + (sale.profitRC || 0), 0)
     const profitPIX = sales.reduce((s, sale) => s + realSaleProfit(sale, rate), 0)
     // group by item name
     const byItem = {}
@@ -154,7 +154,7 @@ export default function MonthlyReport() {
 
   // ── totals ──
   const grandPIX = coinStats.profitCoins + itemStats.profitPIX + accStats.profit
-  const grandRC  = 0
+  const grandRC  = itemStats.profitRC
 
   // ── chart data (last 6 months) ──
   const chartData = useMemo(() => {
