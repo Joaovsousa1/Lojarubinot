@@ -384,9 +384,9 @@ export default function ItemsModule() {
         <div>
           {sorted.length === 0 && <p className="text-gray-500 text-sm py-8 text-center">Nenhum item encontrado.</p>}
           {/* In-stock group */}
-          {sorted.length > 0 && (
+          {(soldSeparatorIdx === -1 || soldSeparatorIdx > 0) && sorted.length > 0 && (
             <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))' }}>
-              {(soldSeparatorIdx === -1 ? sorted : sorted.slice(0, soldSeparatorIdx === -1 ? sorted.length : soldSeparatorIdx)).map(it => (
+              {(soldSeparatorIdx === -1 ? sorted : sorted.slice(0, soldSeparatorIdx)).map(it => (
                 <ItemCard key={it.id} it={it}
                   onEdit={setEditing} onDelete={deleteItem}
                   onSell={setSelling} onHistory={setShowHistory} onClone={handleClone} />
@@ -394,7 +394,7 @@ export default function ItemsModule() {
             </div>
           )}
           {/* Separator */}
-          {soldSeparatorIdx > 0 && (
+          {soldSeparatorIdx >= 0 && (
             <div className="flex items-center gap-3 my-3">
               <div className="flex-1 border-t border-dashed" style={{ borderColor: '#4b2d6e' }} />
               <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: '#ef4444', backgroundColor: '#3b0a0a', border: '1px solid #7f1d1d', borderRadius: 999, padding: '2px 10px' }}>
@@ -404,7 +404,7 @@ export default function ItemsModule() {
             </div>
           )}
           {/* Out-of-stock group */}
-          {soldSeparatorIdx > 0 && (
+          {soldSeparatorIdx >= 0 && (
             <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(148px, 1fr))' }}>
               {sorted.slice(soldSeparatorIdx).map(it => (
                 <ItemCard key={it.id} it={it}
