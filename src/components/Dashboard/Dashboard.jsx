@@ -242,7 +242,11 @@ function StatCard({ icon: Icon, color, title, main, sub, note, trend }) {
 }
 
 // ── Recent Sales Panel ────────────────────────────────────────────────────────
-const VOC_EMOJI = { EK: '⚔️', RP: '🏹', ED: '🧊', MS: '🔥', MONK: '🥋', ALL: '📿' }
+const VOC_EMOJI   = { EK: '⚔️', RP: '🏹', ED: '🧊', MS: '🔥', MONK: '🥋', ALL: '📿' }
+const VOC_COLORS  = {
+  EK: '#ef4444', RP: '#22c55e', ED: '#3b82f6',
+  MS: '#a855f7', MONK: '#f97316', ALL: '#6b7280',
+}
 
 function RecentSalesPanel({ items, rate }) {
   const today     = new Date().toISOString().substring(0, 10)
@@ -285,7 +289,7 @@ function RecentSalesPanel({ items, rate }) {
             style={{ color: '#4b5563' }}>{row.label}</div>
         )
         const profit   = realSaleProfit(row, rate)
-        const vocColor = VOCATION_COLORS[row.vocation] ?? '#6b7280'
+        const vocColor = VOC_COLORS[row.vocation] ?? '#6b7280'
         return (
           <div key={row.key} className="flex items-center gap-2 py-1 px-1 rounded-lg"
             onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'}
@@ -416,8 +420,8 @@ export default function Dashboard() {
   const itemsProfitRC  = monthSales.reduce((s, x) => s + (x.profitRC ?? 0), 0)
   const itemsProfitPIX = monthSales.reduce((s, x) => s + realSaleProfit(x, rate), 0)
 
-  // Accounts (regular + loyalty) — usa apenas dateSold; sem data de venda, exclui do mês
-  const soldDate = (a) => a.dateSold ?? null
+  // Accounts (regular + loyalty) — usa dateSold; cai para dateEntry para contas antigas sem dateSold
+  const soldDate = (a) => a.dateSold ?? a.dateEntry
   const accAvailable     = accounts.filter(a => a.status === 'disponível').length
                          + loyaltyAccounts.filter(a => a.status === 'disponível').length
   const accSoldMonth     = accounts.filter(a => a.status === 'vendida' && (() => { const sd = soldDate(a); return sd && sd.startsWith(cur) })())
