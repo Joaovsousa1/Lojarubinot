@@ -249,8 +249,9 @@ const VOC_COLORS  = {
 }
 
 function RecentSalesPanel({ items, rate }) {
-  const today     = new Date().toISOString().substring(0, 10)
-  const yesterday = new Date(Date.now() - 86400000).toISOString().substring(0, 10)
+  const localDate = (d) => { const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}` }
+  const today     = localDate(new Date())
+  const yesterday = localDate(new Date(Date.now() - 86400000))
 
   const label = (dateStr) => {
     const d = dateStr?.substring(0, 10)
