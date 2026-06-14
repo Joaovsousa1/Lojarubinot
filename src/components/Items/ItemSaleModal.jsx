@@ -108,7 +108,7 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
       soldForRC:   totalRC,
       soldForPIX:  totalPIX,
       observation: finalObs,
-      date:        new Date().toISOString(),
+      date:        (() => { const d = new Date(), p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}` })(),
       syncCoins,
       tradeItemData: hasTrade && tradeItem ? {
         name:           tradeItem,
