@@ -16,6 +16,15 @@ const MOUNT_URL  = Object.fromEntries(
 const VOCATIONS = ['Knight', 'Paladin', 'Sorcerer', 'Druid', 'Monk']
 const STATUSES  = ['disponível', 'reservada', 'em negociação', 'vendida']
 
+const LOYALTY_TIERS = [70,56,42,30,21,15,9,6,3,1]
+function getLoyaltyBonus(pts) {
+  const p = pts ?? 0
+  for (let i = 0; i < LOYALTY_TIERS.length; i++) {
+    if (p >= LOYALTY_TIERS[i]) return LOYALTY_TIERS.length - i
+  }
+  return 0
+}
+
 function VocBadge({ vocation }) {
   const color = VOCATION_COLORS[vocation] ?? '#6b7280'
   return (
@@ -84,9 +93,11 @@ function generateSalesText(acc) {
   // ── Cabeçalho ──────────────────────────────────────────────────────────────
   add(`💥 Level ${acc.level}`)
 
+  const loyaltyBonus = getLoyaltyBonus(acc.loyaltySkill)
+  const loyaltyStr   = loyaltyBonus > 0 ? ` +${loyaltyBonus} skill` : ''
+
   if (skills.ml > 0) {
-    const loyalty = acc.loyaltySkill > 0 ? ` + ${acc.loyaltySkill} Loyalty` : ''
-    add(`✨ Magic Level ${skills.ml}${loyalty}`)
+    add(`✨ Magic Level ${skills.ml}${loyaltyStr}`)
   }
 
   const combatSkills = [
@@ -98,10 +109,10 @@ function generateSalesText(acc) {
   ].filter(Boolean)
 
   if (combatSkills.length) {
-    const loyalty = skills.ml === 0 && acc.loyaltySkill > 0 ? ` + ${acc.loyaltySkill} Loyalty` : ''
-    add(`⚔️  ${combatSkills.join(' | ')}${loyalty}`)
-  } else if (skills.ml === 0 && acc.loyaltySkill > 0) {
-    add(`✨ Loyalty ${acc.loyaltySkill}`)
+    const loy = skills.ml === 0 ? loyaltyStr : ''
+    add(`⚔️  ${combatSkills.join(' | ')}${loy}`)
+  } else if (skills.ml === 0 && loyaltyBonus > 0) {
+    add(`✨ Loyalty +${loyaltyBonus} skill`)
   }
 
   if (skills.shielding > 0) add(`🛡️ Shielding ${skills.shielding}`)
@@ -473,6 +484,9 @@ function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) {
                 <div className="text-white font-bold text-sm leading-tight">{acc.charName}</div>
               )}
               <div className="text-gray-500 text-xs">{acc.server}</div>
+              {acc.email && (
+                <div className="text-xs mt-0.5 font-mono" style={{ color: '#a78bfa' }}>{acc.email}</div>
+              )}
             </div>
             <StatusBadge status={acc.status} />
           </div>
@@ -494,7 +508,7 @@ function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) {
             {acc.bosstiaryPoints   > 0 && <StatChip label="Boss"     value={acc.bosstiaryPoints}   color="#fb923c" />}
             {acc.huntingTaskPoints > 0 && <StatChip label="Tasks"    value={acc.huntingTaskPoints} color="#34d399" />}
             {acc.vipDays           > 0 && <StatChip label="VIP dias" value={acc.vipDays}           color="#fbbf24" />}
-            {acc.loyaltySkill      > 0 && <StatChip label="Loyalty"  value={acc.loyaltySkill}      color="#c084fc" />}
+            {acc.loyaltySkill      > 0 && <StatChip label={`Loyalty +${getLoyaltyBonus(acc.loyaltySkill)}`} value={acc.loyaltySkill} color="#c084fc" />}
           </div>
         )}
 
@@ -645,12 +659,14 @@ function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) {
 }
 
 const SORT_OPTIONS = [
-  { value: 'level-desc',  label: 'Level ↓' },
-  { value: 'level-asc',  label: 'Level ↑' },
-  { value: 'sell-desc',  label: 'Venda ↓' },
-  { value: 'sell-asc',   label: 'Venda ↑' },
-  { value: 'profit-desc', label: 'Lucro ↓' },
-  { value: 'profit-asc', label: 'Lucro ↑' },
+  { value: 'loyalty-desc', label: 'Loyalty ↓' },
+  { value: 'loyalty-asc',  label: 'Loyalty ↑' },
+  { value: 'level-desc',   label: 'Level ↓' },
+  { value: 'level-asc',    label: 'Level ↑' },
+  { value: 'sell-desc',    label: 'Venda ↓' },
+  { value: 'sell-asc',     label: 'Venda ↑' },
+  { value: 'profit-desc',  label: 'Lucro ↓' },
+  { value: 'profit-asc',   label: 'Lucro ↑' },
 ]
 
 export default function AccountsModule() {
@@ -663,7 +679,7 @@ export default function AccountsModule() {
   const [selling, setSelling] = useState(null)
   const [filters, setFilters] = useState({ vocation: '', server: '', status: '' })
   const [search, setSearch] = useState('')
-  const [sortVal, setSortVal] = useState('level-desc')
+  const [sortVal, setSortVal] = useState('loyalty-desc')
 
   const setFilter = (k, v) => setFilters(f => ({ ...f, [k]: v }))
 
@@ -694,11 +710,22 @@ export default function AccountsModule() {
         return true
       })
       .sort((a, b) => {
+        const aSold = a.status === 'vendida' ? 1 : 0
+        const bSold = b.status === 'vendida' ? 1 : 0
+        if (aSold !== bSold) return aSold - bSold
+        // Vendidas: sempre por data de venda mais recente primeiro
+        if (aSold === 1) {
+          const dA = a.dateSold ? new Date(a.dateSold).getTime() : 0
+          const dB = b.dateSold ? new Date(b.dateSold).getTime() : 0
+          return dB - dA
+        }
+        // Não-vendidas: segue o seletor de ordenação
         const [key, dir] = sortVal.split('-')
         const mul = dir === 'asc' ? 1 : -1
-        if (key === 'level')  return mul * (a.level - b.level)
-        if (key === 'sell')   return mul * (a.sellPrice - b.sellPrice)
-        if (key === 'profit') return mul * ((a.sellPrice - a.buyPrice) - (b.sellPrice - b.buyPrice))
+        if (key === 'loyalty') return mul * (getLoyaltyBonus(a.loyaltySkill) - getLoyaltyBonus(b.loyaltySkill))
+        if (key === 'level')   return mul * (a.level - b.level)
+        if (key === 'sell')    return mul * (a.sellPrice - b.sellPrice)
+        if (key === 'profit')  return mul * ((a.sellPrice - a.buyPrice) - (b.sellPrice - b.buyPrice))
         return 0
       })
   }, [accounts, filters, search, sortVal])
@@ -783,21 +810,55 @@ export default function AccountsModule() {
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-gray-500">Nenhuma conta encontrada.</div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map(acc => (
-            <AccountCard
-              key={acc.id}
-              acc={acc}
-              onEdit={() => setEditing(acc)}
-              onClone={() => handleClone(acc)}
-              onAnnounce={() => setAnnouncing(acc)}
-              onSell={() => setSelling(acc)}
-              onDelete={() => { if (confirm(`Excluir conta ${acc.charName || acc.vocation + ' Lv' + acc.level}?`)) deleteAccount(acc.id) }}
-            />
-          ))}
-        </div>
-      )}
+      ) : (() => {
+        const forSale = filtered.filter(a => a.status !== 'vendida')
+        const sold    = filtered.filter(a => a.status === 'vendida')
+        const renderCard = (acc) => (
+          <AccountCard
+            key={acc.id}
+            acc={acc}
+            onEdit={() => setEditing(acc)}
+            onClone={() => handleClone(acc)}
+            onAnnounce={() => setAnnouncing(acc)}
+            onSell={() => setSelling(acc)}
+            onDelete={() => { if (confirm(`Excluir conta ${acc.charName || acc.vocation + ' Lv' + acc.level}?`)) deleteAccount(acc.id) }}
+          />
+        )
+        return (
+          <div className="space-y-8">
+            {forSale.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                    style={{ backgroundColor: '#3b076422', color: '#a78bfa', border: '1px solid #7c3aed33' }}>
+                    Para Venda · {forSale.length}
+                  </span>
+                  <div className="flex-1 h-px" style={{ backgroundColor: '#2a2035' }} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {forSale.map(renderCard)}
+                </div>
+              </div>
+            )}
+
+            {sold.length > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
+                  <span className="text-xs font-semibold px-3 py-1 rounded-full"
+                    style={{ backgroundColor: '#14532d22', color: '#4ade80', border: '1px solid #16a34a33' }}>
+                    Vendidas · {sold.length}
+                  </span>
+                  <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 opacity-70">
+                  {sold.map(renderCard)}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {showForm && (
         <Modal title="Adicionar conta" onClose={() => setShowForm(false)} wide>

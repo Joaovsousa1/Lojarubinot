@@ -87,7 +87,11 @@ export default function Settings() {
     const accSold = accounts.filter(a => a.status === 'vendida' && a.dateSold?.startsWith(cur))
     const accProfit = accSold.reduce((s, a) => s + (a.sellPrice - a.buyPrice), 0)
 
-    const totalPIX = coinProfit + itemProfitPIX + accProfit
+    const loyaltyAccounts = settings.loyaltyAccounts ?? []
+    const loyaltySold = loyaltyAccounts.filter(a => a.status === 'vendida' && (a.dateSold ?? a.dateEntry)?.startsWith(cur))
+    const loyaltyProfit = loyaltySold.reduce((s, a) => s + ((a.sellPrice || 0) - (a.buyPrice || 0)), 0)
+
+    const totalPIX = coinProfit + itemProfitPIX + accProfit + loyaltyProfit
 
     const lines = [
       `╔════════════════════════════════════╗`,
@@ -109,6 +113,11 @@ export default function Settings() {
       `  Disponíveis : ${accounts.filter(a => a.status === 'disponível').length}`,
       `  Vendidas    : ${accSold.length}`,
       `  Lucro       : R$ ${accProfit.toFixed(2)}`,
+      ``,
+      `⭐ CONTAS LOYALTY`,
+      `  Disponíveis : ${loyaltyAccounts.filter(a => a.status !== 'vendida').length}`,
+      `  Vendidas    : ${loyaltySold.length}`,
+      `  Lucro       : R$ ${loyaltyProfit.toFixed(2)}`,
       ``,
       `══════════════════════════════════════`,
       `💰 LUCRO TOTAL PIX: R$ ${totalPIX.toFixed(2)}`,

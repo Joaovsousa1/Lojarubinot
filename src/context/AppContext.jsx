@@ -40,9 +40,15 @@ export function AppProvider({ children }) {
     setAccountsTabRaw(tab)
   }, [])
   const [dataLoaded, setDataLoaded] = useState(false)
+  const [loadError,  setLoadError]  = useState(null)  // null | { code, message }
   const [toasts, setToasts]     = useState([])
-  const loadIdRef   = useRef(0)   // race condition guard
-  const loadedForId = useRef(null) // skip reload when same user (token refresh)
+  const loadIdRef    = useRef(0)
+  const loadedForId  = useRef(null)
+  // Ref que sempre aponta para o settings mais recente, evitando stale closure
+  const settingsRef  = useRef(DEFAULT_SETTINGS)
+
+  // Mantém settingsRef sempre atualizado para evitar stale closure nas funções de settings
+  useEffect(() => { settingsRef.current = settings }, [settings])
 
   // ── Toast system ───────────────────────────────────────────────────────────
   const addToast = useCallback((message, type = 'error') => {
@@ -60,12 +66,15 @@ export function AppProvider({ children }) {
     if (!userId) return
     const myLoad = ++loadIdRef.current
     setDataLoaded(false)
+    setLoadError(null)
+
+    if (myLoad !== loadIdRef.current) return
 
     const [
       { data: c, error: ce },
       { data: it, error: ie },
       { data: ac, error: ae },
-      { data: st },
+      { data: st, error: se },
     ] = await Promise.all([
       supabase.from('coins').select('*').eq('user_id', userId).order('date', { ascending: false }),
       supabase.from('items').select('*').eq('user_id', userId).order('date_entry', { ascending: false }),
@@ -73,28 +82,36 @@ export function AppProvider({ children }) {
       supabase.from('settings').select('*').eq('user_id', userId).single(),
     ])
 
-    // Descarta resultado se uma carga mais recente já começou
     if (myLoad !== loadIdRef.current) return
 
-    // Só atualiza o estado se não houve erro — evita apagar dados ao falhar
-    if (ce) { addToast('Erro ao carregar coins. Tente recarregar.'); console.error('[loadData] coins:', ce.message) }
-    else setCoins((c ?? []).map(dbToCoin))
+    const firstErr = ce || ie || ae
+    if (firstErr) {
+      const errInfo = { code: firstErr.code ?? '', message: firstErr.message ?? 'Erro desconhecido', details: firstErr.details ?? '' }
+      console.error('[loadData] erro:', errInfo)
+      setLoadError(errInfo)
+    }
 
-    if (ie) { addToast('Erro ao carregar itens. Tente recarregar.'); console.error('[loadData] items:', ie.message) }
-    else setItems((it ?? []).map(dbToItem))
-
-    if (ae) { addToast('Erro ao carregar contas. Tente recarregar.'); console.error('[loadData] accounts:', ae.message) }
-    else setAccounts((ac ?? []).map(dbToAccount))
+    if (!ce) setCoins((c ?? []).map(dbToCoin))
+    if (!ie) setItems((it ?? []).map(dbToItem))
+    if (!ae) setAccounts((ac ?? []).map(dbToAccount))
+    if (se && se.code !== 'PGRST116') {
+      console.error('[loadData] settings:', se.code, se.message)
+      addToast(`Erro ao carregar configurações: ${se.message}`)
+    }
 
     let saved = st ? { ...DEFAULT_SETTINGS, ...st.data } : DEFAULT_SETTINGS
-    if (saved.coinPrices.buy10k < 5) {
-      saved = { ...saved, coinPrices: DEFAULT_SETTINGS.coinPrices }
-    }
-    // Se rcRate não foi configurado (0 ou ausente), usa o padrão 1000 RC = R$87
+    if (saved.coinPrices.buy10k < 5) saved = { ...saved, coinPrices: DEFAULT_SETTINGS.coinPrices }
     if (!saved.rcRate) saved = { ...saved, rcRate: 0.087 }
+    settingsRef.current = saved
     setSettings(saved)
     setDataLoaded(true)
   }, [addToast])
+
+  const reloadData = useCallback(() => {
+    if (!user?.id) return
+    loadedForId.current = null
+    loadData(user.id)
+  }, [user?.id, loadData])
 
   // Só recarrega quando o ID do usuário muda — ignora refresh de token
   useEffect(() => {
@@ -111,6 +128,7 @@ export function AppProvider({ children }) {
       id: row.id, name: row.name, set: row.set, imageUrl: row.image_url,
       classification: row.classification, tier: row.tier, maxTier: row.max_tier,
       server: row.server, category: row.category, quantity: row.quantity,
+      vocation: row.vocation ?? 'ALL',
       buyPriceRC: row.buy_price_rc, buyPricePIX: row.buy_price_pix,
       sellPriceRC: row.sell_price_rc, sellPricePIX: row.sell_price_pix,
       observation: row.observation, dateEntry: row.date_entry,
@@ -124,6 +142,7 @@ export function AppProvider({ children }) {
       user_id: user?.id, name: item.name, set: item.set, image_url: item.imageUrl,
       classification: item.classification, tier: item.tier, max_tier: item.maxTier,
       server: item.server, category: item.category, quantity: item.quantity,
+      vocation: item.vocation ?? 'ALL',
       buy_price_rc: item.buyPriceRC, buy_price_pix: item.buyPricePIX,
       sell_price_rc: item.sellPriceRC, sell_price_pix: item.sellPricePIX,
       observation: item.observation, date_entry: item.dateEntry,
@@ -134,7 +153,8 @@ export function AppProvider({ children }) {
   function dbToAccount(row) {
     return {
       id: row.id, server: row.server, vocation: row.vocation, level: row.level,
-      charName: row.char_name, buyPrice: row.buy_price, sellPrice: row.sell_price,
+      charName: row.char_name, email: row.email ?? '',
+      buyPrice: row.buy_price, sellPrice: row.sell_price,
       status: row.status, dateEntry: row.date_entry, dateSold: row.date_sold,
       skills: row.skills ?? {}, charmPoints: row.charm_points,
       bosstiaryPoints: row.bosstiary_points, huntingTaskPoints: row.hunting_task_points,
@@ -176,7 +196,8 @@ export function AppProvider({ children }) {
     return {
       id: acc.id ?? generateId(),
       user_id: user?.id, server: acc.server, vocation: acc.vocation, level: acc.level,
-      char_name: acc.charName, buy_price: acc.buyPrice, sell_price: acc.sellPrice,
+      char_name: acc.charName, email: acc.email ?? '',
+      buy_price: acc.buyPrice, sell_price: acc.sellPrice,
       status: acc.status, date_entry: acc.dateEntry, date_sold: acc.dateSold,
       skills: acc.skills ?? {}, charm_points: acc.charmPoints,
       bosstiary_points: acc.bosstiaryPoints, hunting_task_points: acc.huntingTaskPoints,
@@ -257,6 +278,8 @@ export function AppProvider({ children }) {
       setItems(list => list.map(it => it.id === id ? prev : it))
       addToast(`Erro ao atualizar item: ${error.message}`)
       console.error('[updateItem]', error)
+    } else {
+      addToast(`"${updated.name}" atualizado!`, 'success')
     }
   }
 
@@ -331,42 +354,49 @@ export function AppProvider({ children }) {
     }
   }
 
-  // ── Loyalty Accounts ──────────────────────────────────────────────────────
-  const addLoyaltyAccount = (acc) => {
-    const newAcc = { ...acc, id: generateId(), dateEntry: new Date().toISOString() }
-    updateSettings({ loyaltyAccounts: [...(settings.loyaltyAccounts ?? []), newAcc] })
-  }
-
-  const updateLoyaltyAccount = (id, updates) => {
-    const updated = (settings.loyaltyAccounts ?? []).map(a => a.id === id ? { ...a, ...updates } : a)
-    updateSettings({ loyaltyAccounts: updated })
-  }
-
-  const deleteLoyaltyAccount = (id) => {
-    updateSettings({ loyaltyAccounts: (settings.loyaltyAccounts ?? []).filter(a => a.id !== id) })
-  }
-
   // ── Settings ───────────────────────────────────────────────────────────────
-  const updateSettings = async (updates) => {
-    const backup = settings
-    const updated = { ...settings, ...updates }
+  // Usa settingsRef.current (sempre atualizado) para evitar stale closure quando
+  // múltiplas chamadas acontecem antes de um re-render (ex: add server + save prices)
+  const updateSettings = useCallback(async (updates) => {
+    const latest = settingsRef.current
+    const backup = latest
+    const updated = { ...latest, ...updates }
+    settingsRef.current = updated
     setSettings(updated)
-    const { error } = await supabase.from('settings').upsert({ user_id: user.id, data: updated })
+    const { error } = await supabase.from('settings').upsert({ user_id: user?.id, data: updated }, { onConflict: 'user_id' })
     if (error) {
+      settingsRef.current = backup
       setSettings(backup)
       addToast(`Erro ao salvar configurações: ${error.message}`)
       console.error('[updateSettings]', error)
     }
-  }
+  }, [user?.id, addToast])
 
-  const addServer = (srv) => {
-    if (!srv || settings.servers.includes(srv)) return
-    updateSettings({ servers: [...settings.servers, srv] })
-  }
+  const addServer = useCallback((srv) => {
+    if (!srv || settingsRef.current.servers.includes(srv)) return
+    updateSettings({ servers: [...settingsRef.current.servers, srv] })
+  }, [updateSettings])
 
-  const removeServer = (srv) => {
-    updateSettings({ servers: settings.servers.filter(s => s !== srv) })
-  }
+  const removeServer = useCallback((srv) => {
+    updateSettings({ servers: settingsRef.current.servers.filter(s => s !== srv) })
+  }, [updateSettings])
+
+  // ── Loyalty Accounts ──────────────────────────────────────────────────────
+  // Todas usam settingsRef.current para garantir que a lista mais recente é usada,
+  // mesmo que chamadas consecutivas aconteçam antes de um re-render do React
+  const addLoyaltyAccount = useCallback((acc) => {
+    const newAcc = { ...acc, id: generateId(), dateEntry: new Date().toISOString() }
+    updateSettings({ loyaltyAccounts: [...(settingsRef.current.loyaltyAccounts ?? []), newAcc] })
+  }, [updateSettings])
+
+  const updateLoyaltyAccount = useCallback((id, updates) => {
+    const updated = (settingsRef.current.loyaltyAccounts ?? []).map(a => a.id === id ? { ...a, ...updates } : a)
+    updateSettings({ loyaltyAccounts: updated })
+  }, [updateSettings])
+
+  const deleteLoyaltyAccount = useCallback((id) => {
+    updateSettings({ loyaltyAccounts: (settingsRef.current.loyaltyAccounts ?? []).filter(a => a.id !== id) })
+  }, [updateSettings])
 
   // ── Export / Import ────────────────────────────────────────────────────────
   const exportData = () => {
@@ -428,7 +458,7 @@ export function AppProvider({ children }) {
       updateSettings, addServer, removeServer,
       exportData, importData,
       setCoins, setItems, setAccounts,
-      loadData: () => user?.id && loadData(user.id),
+      loadData: reloadData, loadError,
     }}>
       {children}
     </AppContext.Provider>
