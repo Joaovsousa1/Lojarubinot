@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { TrendingUp, TrendingDown, Coins, Package, Users, ArrowRight, CalendarDays } from 'lucide-react'
+import { TrendingUp, TrendingDown, Coins, Package, Users, ArrowRight, CalendarDays, Eye, EyeOff } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
@@ -55,13 +55,14 @@ const PERIODS = [
   { label: '30 dias', days: 30 },
 ]
 
-function ProfitPeriodSection({ coins, items, accounts, loyaltyAccounts, rate }) {
+function ProfitPeriodSection({ coins, items, accounts, loyaltyAccounts, rate, hidden }) {
   const [active, setActive] = useState(1)
   const data = PERIODS.map(p => ({
     ...p,
     ...getProfitForRange(p.days, { coins, items, accounts, loyaltyAccounts, rate }),
   }))
   const sel = data[active]
+  const msk = (v) => hidden ? '•••' : formatCurrency(v)
 
   return (
     <div className="rounded-2xl p-5 relative overflow-hidden"
@@ -107,7 +108,7 @@ function ProfitPeriodSection({ coins, items, accounts, loyaltyAccounts, rate }) 
             letterSpacing: '-1px',
             color: sel.total >= 0 ? '#f1f5f9' : '#f87171',
           }}>
-            {formatCurrency(sel.total)}
+            {msk(sel.total)}
           </div>
         </div>
 
@@ -120,7 +121,7 @@ function ProfitPeriodSection({ coins, items, accounts, loyaltyAccounts, rate }) 
           ].map(s => (
             <div key={s.label} className="flex flex-col items-center gap-1 min-w-[80px]">
               <div className="text-xl">{s.icon}</div>
-              <div className="text-sm font-black" style={{ color: s.color }}>{formatCurrency(s.value)}</div>
+              <div className="text-sm font-black" style={{ color: s.color }}>{msk(s.value)}</div>
               <div className="text-[10px] font-semibold" style={{ color: '#475569' }}>{s.label}</div>
             </div>
           ))}
@@ -161,7 +162,7 @@ function ProfitPeriodSection({ coins, items, accounts, loyaltyAccounts, rate }) 
               {p.label}
             </div>
             <div className="text-sm font-black" style={{ color: p.total >= 0 ? (active === i ? '#f1f5f9' : '#6b7280') : '#f87171' }}>
-              {formatCurrency(p.total)}
+              {msk(p.total)}
             </div>
           </button>
         ))}
@@ -177,7 +178,7 @@ function greeting() {
   return 'Boa noite'
 }
 
-const CustomTooltip = ({ active, payload, label }) => {
+const makeTooltip = (hidden) => ({ active, payload, label }) => {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-xl p-3 text-sm shadow-2xl" style={{ backgroundColor: '#1e1330', border: '1px solid rgba(124,58,237,0.3)' }}>
@@ -186,7 +187,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         <div key={p.dataKey} className="flex items-center gap-2 mb-0.5">
           <div style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: p.stroke || p.fill }} />
           <span style={{ color: '#94a3b8' }}>{p.name}:</span>
-          <span style={{ color: '#fff', fontWeight: 700 }}>{formatCurrency(p.value)}</span>
+          <span style={{ color: '#fff', fontWeight: 700 }}>{hidden ? '•••' : formatCurrency(p.value)}</span>
         </div>
       ))}
     </div>
@@ -248,7 +249,7 @@ const VOC_COLORS  = {
   MS: '#a855f7', MONK: '#f97316', ALL: '#6b7280',
 }
 
-function RecentSalesPanel({ items, accounts, loyaltyAccounts, rate }) {
+function RecentSalesPanel({ items, accounts, loyaltyAccounts, rate, hidden }) {
   const localDate = (d) => { const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}` }
   const today     = localDate(new Date())
   const yesterday = localDate(new Date(Date.now() - 86400000))
@@ -314,7 +315,7 @@ function RecentSalesPanel({ items, accounts, loyaltyAccounts, rate }) {
             <span className="text-xs flex-1 truncate" style={{ color: isAcc || isLoyalty ? '#c4b5fd' : '#94a3b8' }}>{row.label}</span>
             <span className="text-[11px] font-bold shrink-0"
               style={{ color: row.profit >= 0 ? '#4ade80' : '#f87171' }}>
-              {row.profit >= 0 ? '+' : ''}{formatCurrency(row.profit)}
+              {hidden ? '•••' : `${row.profit >= 0 ? '+' : ''}${formatCurrency(row.profit)}`}
             </span>
           </div>
         )
@@ -399,6 +400,9 @@ export default function Dashboard() {
   const { profile, isAdmin } = useAuth()
   const [diagResult, setDiagResult] = React.useState(null)
   const [diagLoading, setDiagLoading] = React.useState(false)
+  const [hidden, setHidden] = React.useState(() => localStorage.getItem('rubinot_hidden') === '1')
+  const toggleHidden = () => setHidden(h => { const n = !h; localStorage.setItem('rubinot_hidden', n ? '1' : '0'); return n })
+  const mask = (v) => hidden ? '•••' : v
 
   const runDiag = async () => {
     setDiagLoading(true); setDiagResult(null)
@@ -474,19 +478,34 @@ export default function Dashboard() {
           </h1>
           <p className="text-sm mt-1 capitalize" style={{ color: '#475569' }}>{curMonthLabel}</p>
         </div>
-        <button
-          onClick={() => setActiveModule('reports')}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
-          style={{
-            backgroundColor: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
-            color: '#c084fc', cursor: 'pointer',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.25)' }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.15)' }}
-        >
-          📋 Ver relatório mensal
-          <ArrowRight size={14} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleHidden}
+            title={hidden ? 'Mostrar valores' : 'Ocultar valores'}
+            className="flex items-center justify-center w-9 h-9 rounded-xl transition-all"
+            style={{
+              backgroundColor: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.25)',
+              color: hidden ? '#a78bfa' : '#4b5563', cursor: 'pointer',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.22)' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.12)' }}
+          >
+            {hidden ? <EyeOff size={15} /> : <Eye size={15} />}
+          </button>
+          <button
+            onClick={() => setActiveModule('reports')}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all"
+            style={{
+              backgroundColor: 'rgba(124,58,237,0.15)', border: '1px solid rgba(124,58,237,0.3)',
+              color: '#c084fc', cursor: 'pointer',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.25)' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(124,58,237,0.15)' }}
+          >
+            📋 Ver relatório mensal
+            <ArrowRight size={14} />
+          </button>
+        </div>
       </div>
 
       {/* ── Diagnóstico (só para admin/owner) ── */}
@@ -544,19 +563,19 @@ export default function Dashboard() {
               <span className="text-sm font-semibold" style={{ color: '#c4b5fd' }}>Lucro Total do Mês</span>
             </div>
             <div className="text-5xl font-black text-white mb-1" style={{ letterSpacing: '-1.5px' }}>
-              {formatCurrency(totalPIX)}
+              {mask(formatCurrency(totalPIX))}
             </div>
             {totalRC > 0 && (
               <div className="text-xl font-bold" style={{ color: '#fde68a' }}>
-                + {formatRC(totalRC)}
+                + {mask(formatRC(totalRC))}
               </div>
             )}
           </div>
           <div className="flex gap-6 flex-wrap">
             {[
-              { label: 'em Coins', value: formatCurrency(coinsProfitPIX), color: '#fbbf24', icon: '💰' },
-              { label: 'em Itens', value: formatCurrency(itemsProfitPIX), color: '#c084fc', icon: '📦' },
-              { label: 'em Contas', value: formatCurrency(accProfitPIX), color: '#4ade80', icon: '👤' },
+              { label: 'em Coins', value: mask(formatCurrency(coinsProfitPIX)), color: '#fbbf24', icon: '💰' },
+              { label: 'em Itens', value: mask(formatCurrency(itemsProfitPIX)), color: '#c084fc', icon: '📦' },
+              { label: 'em Contas', value: mask(formatCurrency(accProfitPIX)), color: '#4ade80', icon: '👤' },
             ].map(s => (
               <div key={s.label} style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
@@ -575,25 +594,26 @@ export default function Dashboard() {
         accounts={accounts}
         loyaltyAccounts={loyaltyAccounts}
         rate={rate}
+        hidden={hidden}
       />
 
       {/* ── Stat cards ── */}
       <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
         <StatCard
           icon={Coins} color="#f59e0b" title="Coins — lucro do mês"
-          main={formatCurrency(coinsProfitPIX)}
+          main={mask(formatCurrency(coinsProfitPIX))}
           sub={`${formatNumber(coinsBought)} comprados · ${formatNumber(coinsSold)} vendidos`}
           note={totalCoinsStock > 0 ? `${formatNumber(totalCoinsStock)} em estoque` : null}
         />
         <StatCard
           icon={Package} color="#a855f7" title="Itens — lucro do mês"
-          main={itemsProfitPIX > 0 ? formatCurrency(itemsProfitPIX) : itemsProfitRC > 0 ? formatRC(itemsProfitRC) : 'R$ 0,00'}
+          main={mask(itemsProfitPIX > 0 ? formatCurrency(itemsProfitPIX) : itemsProfitRC > 0 ? formatRC(itemsProfitRC) : 'R$ 0,00')}
           sub={`${itemsInStock} em estoque · ${itemsSoldQty} vendidos`}
           note={itemsProfitRC > 0 && itemsProfitPIX > 0 ? `+ ${formatRC(itemsProfitRC)}` : null}
         />
         <StatCard
           icon={Users} color="#22c55e" title="Contas — lucro do mês"
-          main={formatCurrency(accProfitPIX)}
+          main={mask(formatCurrency(accProfitPIX))}
           sub={`${accAvailable} disponíveis · ${accSoldMonth.length + loyaltySoldMonth.length} vendidas`}
         />
       </div>
@@ -638,7 +658,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(124,58,237,0.1)" vertical={false} />
                 <XAxis dataKey="label" tick={{ fill: '#4b5563', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#4b5563', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip content={makeTooltip(hidden)} />
                 <Area type="monotone" dataKey="Coins"  stroke="#f59e0b" fill="url(#grad_coins)"  strokeWidth={2} dot={false} name="Coins" />
                 <Area type="monotone" dataKey="Itens"  stroke="#a855f7" fill="url(#grad_itens)"  strokeWidth={2} dot={false} name="Itens" />
                 <Area type="monotone" dataKey="Contas" stroke="#22c55e" fill="url(#grad_contas)" strokeWidth={2} dot={false} name="Contas" />
@@ -656,7 +676,7 @@ export default function Dashboard() {
             </div>
             <h3 className="text-sm font-bold text-white">Últimas vendas</h3>
           </div>
-          <RecentSalesPanel items={items} accounts={accounts} loyaltyAccounts={loyaltyAccounts} rate={rate} />
+          <RecentSalesPanel items={items} accounts={accounts} loyaltyAccounts={loyaltyAccounts} rate={rate} hidden={hidden} />
         </div>
 
       </div>
