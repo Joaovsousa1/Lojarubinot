@@ -248,7 +248,7 @@ const VOC_COLORS  = {
   MS: '#a855f7', MONK: '#f97316', ALL: '#6b7280',
 }
 
-function RecentSalesPanel({ items, rate }) {
+function RecentSalesPanel({ items, accounts, loyaltyAccounts, rate }) {
   const localDate = (d) => { const p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}` }
   const today     = localDate(new Date())
   const yesterday = localDate(new Date(Date.now() - 86400000))
@@ -261,9 +261,19 @@ function RecentSalesPanel({ items, rate }) {
     return d.substring(8) + '/' + d.substring(5, 7)
   }
 
-  const sales = items
-    .flatMap(it => (it.sales ?? []).map(s => ({ ...s, itemName: it.name, vocation: it.vocation ?? 'ALL' })))
+  const itemSales = items
+    .flatMap(it => (it.sales ?? []).map(s => ({ kind: 'item', date: s.date, profit: realSaleProfit(s, rate), key: s.id ?? `${s.date}-${it.name}`, label: it.name, vocation: it.vocation ?? 'ALL' })))
     .filter(s => s.date)
+
+  const accSales = (accounts ?? [])
+    .filter(a => a.status === 'vendida' && a.dateSold)
+    .map(a => ({ kind: 'conta', date: a.dateSold, profit: (a.sellPrice || 0) - (a.buyPrice || 0), key: `acc-${a.id}`, label: 'Conta' }))
+
+  const loyaltySales = (loyaltyAccounts ?? [])
+    .filter(a => a.status === 'vendida' && (a.dateSold || a.dateEntry))
+    .map(a => ({ kind: 'loyalty', date: a.dateSold ?? a.dateEntry, profit: (a.sellPrice || 0) - (a.buyPrice || 0), key: `loy-${a.id}`, label: 'Loyalty' }))
+
+  const sales = [...itemSales, ...accSales, ...loyaltySales]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 15)
 
@@ -278,8 +288,8 @@ function RecentSalesPanel({ items, rate }) {
   let lastDate = null
   for (const s of sales) {
     const d = s.date?.substring(0, 10)
-    if (d !== lastDate) { rows.push({ type: 'sep', label: label(d), key: `sep-${d}` }); lastDate = d }
-    rows.push({ type: 'sale', ...s, key: s.id ?? `${s.date}-${s.itemName}` })
+    if (d !== lastDate) { rows.push({ type: 'sep', label: label(d), key: `sep-${d}-${s.key}` }); lastDate = d }
+    rows.push({ type: 'sale', ...s })
   }
 
   return (
@@ -289,20 +299,22 @@ function RecentSalesPanel({ items, rate }) {
           <div key={row.key} className="text-[10px] font-bold uppercase tracking-widest pt-2 pb-1"
             style={{ color: '#4b5563' }}>{row.label}</div>
         )
-        const profit   = realSaleProfit(row, rate)
-        const vocColor = VOC_COLORS[row.vocation] ?? '#6b7280'
+        const isAcc     = row.kind === 'conta'
+        const isLoyalty = row.kind === 'loyalty'
+        const vocColor  = isAcc ? '#a78bfa' : isLoyalty ? '#fbbf24' : (VOC_COLORS[row.vocation] ?? '#6b7280')
+        const icon      = isAcc ? '👤' : isLoyalty ? '⭐' : (VOC_EMOJI[row.vocation] ?? '📿')
         return (
           <div key={row.key} className="flex items-center gap-2 py-1 px-1 rounded-lg"
             onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'}
             onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
             <div className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
               style={{ backgroundColor: vocColor + '28', border: `1px solid ${vocColor}44`, fontSize: 9 }}>
-              {VOC_EMOJI[row.vocation] ?? '📿'}
+              {icon}
             </div>
-            <span className="text-xs flex-1 truncate" style={{ color: '#94a3b8' }}>{row.itemName}</span>
+            <span className="text-xs flex-1 truncate" style={{ color: isAcc || isLoyalty ? '#c4b5fd' : '#94a3b8' }}>{row.label}</span>
             <span className="text-[11px] font-bold shrink-0"
-              style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>
-              {profit >= 0 ? '+' : ''}{formatCurrency(profit)}
+              style={{ color: row.profit >= 0 ? '#4ade80' : '#f87171' }}>
+              {row.profit >= 0 ? '+' : ''}{formatCurrency(row.profit)}
             </span>
           </div>
         )
@@ -644,7 +656,7 @@ export default function Dashboard() {
             </div>
             <h3 className="text-sm font-bold text-white">Últimas vendas</h3>
           </div>
-          <RecentSalesPanel items={items} rate={rate} />
+          <RecentSalesPanel items={items} accounts={accounts} loyaltyAccounts={loyaltyAccounts} rate={rate} />
         </div>
 
       </div>
