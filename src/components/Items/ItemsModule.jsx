@@ -282,7 +282,7 @@ export default function ItemsModule() {
           .filter(it => getVoc(it) === key)
           .sort((a, b) => getPrice(b) - getPrice(a))
         const deduped = [...new Map(sorted.map(it => [it.name, it])).values()]
-        return deduped.length > 0 ? `${label} ${deduped.map(it => it.name).join(' • ')}` : null
+        return deduped.length > 0 ? `${label} ${deduped.map(it => `${it.name} (TIER ${it.tier ?? 0})`).join(' • ')}` : null
       })
       .filter(Boolean)
 
