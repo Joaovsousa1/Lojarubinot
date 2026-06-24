@@ -267,7 +267,11 @@ export default function ItemsModule() {
     const pool = items.filter(it =>
       it.quantity > 0 && (copyServers.length === 0 || copyServers.includes(it.server))
     )
-    const getPrice = (it) => (it.sellPricePIX || 0) + (it.sellPriceRC || 0) * rate
+    const getPrice = (it) => {
+      const sell = (it.sellPricePIX || 0) + (it.sellPriceRC || 0) * rate
+      if (sell > 0) return sell
+      return (it.buyPricePIX || 0) + (it.buyPriceRC || 0) * rate
+    }
 
     const getVoc = (it) => {
       if (ITEM_VOCATIONS[it.name]) return ITEM_VOCATIONS[it.name]
