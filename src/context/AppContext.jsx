@@ -129,8 +129,8 @@ export function AppProvider({ children }) {
       classification: row.classification, tier: row.tier, maxTier: row.max_tier,
       server: row.server, category: row.category, quantity: row.quantity,
       vocation: row.vocation ?? 'ALL',
-      buyPriceRC: row.buy_price_rc, buyPricePIX: row.buy_price_pix,
-      sellPriceRC: row.sell_price_rc, sellPricePIX: row.sell_price_pix,
+      buyPriceRC: Number(row.buy_price_rc) || 0, buyPricePIX: Number(row.buy_price_pix) || 0,
+      sellPriceRC: Number(row.sell_price_rc) || 0, sellPricePIX: Number(row.sell_price_pix) || 0,
       observation: row.observation, dateEntry: row.date_entry,
       sales: row.sales ?? [], priceHistory: row.price_history ?? [],
     }
