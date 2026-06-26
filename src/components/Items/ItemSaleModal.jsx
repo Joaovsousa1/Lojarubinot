@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { Plus, X } from 'lucide-react'
 import Modal from '../UI/Modal'
 import ItemImage from '../UI/ItemImage'
 import { formatCurrency, formatRC, buildImageUrl } from '../../utils/helpers'
@@ -8,32 +9,16 @@ const INPUT = 'w-full px-3 py-2 rounded-lg text-sm text-white outline-none'
 const INPUT_STYLE = { backgroundColor: '#1a1025', border: '1px solid #3a3050' }
 const LABEL = 'block text-xs text-gray-400 mb-1'
 
-export default function ItemSaleModal({ item, onConfirm, onClose }) {
-  const maxQty      = item.quantity > 0 ? item.quantity : 1
-  const isZeroStock = item.quantity === 0
+const emptyTrade = () => ({
+  id: Math.random().toString(36).slice(2),
+  name: '', imageUrl: '', category: 'arma',
+  valueRC: '', valuePIX: '', qty: 1,
+  classification: 4, tier: 0, maxTier: 4, set: '',
+})
 
-  const [qty,       setQty]       = useState(1)
-  const [soldForRC, setSoldForRC] = useState(item.sellPriceRC  || '')
-  const [soldForPIX,setSoldForPIX]= useState(item.sellPricePIX || '')
-  const [obs,       setObs]       = useState('')
-  const [syncCoins, setSyncCoins] = useState(true)
-
-  // Troca
-  const [hasTrade,            setHasTrade]            = useState(false)
-  const [tradeItem,           setTradeItem]           = useState('')
-  const [tradeImageUrl,       setTradeImageUrl]       = useState('')
-  const [tradeCategory,       setTradeCategory]       = useState('arma')
-  const [tradeValueRC,        setTradeValueRC]        = useState('')
-  const [tradeValuePIX,       setTradeValuePIX]       = useState('')
-  const [tradeQty,            setTradeQty]            = useState(1)
-  const [tradeClassification, setTradeClassification] = useState(4)
-  const [tradeTier,           setTradeTier]           = useState(0)
-  const [tradeMaxTier,        setTradeMaxTier]        = useState(4)
-  const [tradeSet,            setTradeSet]            = useState('')
-
-  // Autocomplete da troca
+function TradeItemRow({ trade, onChange, onRemove, showRemove }) {
   const [suggestions, setSuggestions] = useState([])
-  const [showSug,     setShowSug]     = useState(false)
+  const [showSug, setShowSug] = useState(false)
   const sugRef = useRef(null)
 
   useEffect(() => {
@@ -44,9 +29,8 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  const handleTradeNameChange = (val) => {
-    setTradeItem(val)
-    setTradeImageUrl('')
+  const handleNameChange = (val) => {
+    onChange({ ...trade, name: val, imageUrl: '' })
     if (val.length >= 2) {
       const sug = searchItems(val)
       setSuggestions(sug)
@@ -56,35 +40,131 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
     }
   }
 
-  const selectTradeItem = (dbItem) => {
-    setTradeItem(dbItem.name)
-    setTradeImageUrl(dbItem.imageUrl)
-    setTradeCategory(dbItem.category)
-    setTradeClassification(dbItem.classification ?? 4)
-    setTradeTier(dbItem.tier ?? 0)
-    setTradeMaxTier(dbItem.maxTier ?? 4)
-    setTradeSet(dbItem.set ?? '')
+  const selectItem = (dbItem) => {
+    onChange({
+      ...trade,
+      name:           dbItem.name,
+      imageUrl:       dbItem.imageUrl,
+      category:       dbItem.category,
+      classification: dbItem.classification ?? 4,
+      tier:           dbItem.tier ?? 0,
+      maxTier:        dbItem.maxTier ?? 4,
+      set:            dbItem.set ?? '',
+    })
     setShowSug(false)
   }
 
-  const handleTradeNameBlur = () => {
+  const handleNameBlur = () => {
     setTimeout(() => setShowSug(false), 150)
-    if (!tradeImageUrl && tradeItem) {
-      const dbItem = getItemByName(tradeItem)
-      if (dbItem) selectTradeItem(dbItem)
-      else setTradeImageUrl(buildImageUrl(tradeItem))
+    if (!trade.imageUrl && trade.name) {
+      const dbItem = getItemByName(trade.name)
+      if (dbItem) selectItem(dbItem)
+      else onChange({ ...trade, imageUrl: buildImageUrl(trade.name) })
     }
   }
 
-  const q    = Math.max(1, parseInt(qty)   || 1)
-  const rc   = parseFloat(soldForRC)       || 0
-  const pix  = parseFloat(soldForPIX)      || 0
-  const tRC  = parseFloat(tradeValueRC)    || 0
-  const tPIX = parseFloat(tradeValuePIX)   || 0
-  const tQty = Math.max(1, parseInt(tradeQty) || 1)
+  return (
+    <div className="rounded-lg p-3 space-y-2" style={{ backgroundColor: '#180f27', border: '1px solid #3a3050' }}>
+      <div className="flex items-start gap-2">
+        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5"
+          style={{ backgroundColor: '#130e1e', border: '1px solid #3a3050' }}>
+          <ItemImage src={trade.imageUrl} category={trade.category} size={26} alt={trade.name} />
+        </div>
+        <div className="flex-1 relative" ref={sugRef}>
+          <input type="text"
+            className={INPUT} style={INPUT_STYLE}
+            value={trade.name}
+            onChange={e => handleNameChange(e.target.value)}
+            onFocus={() => trade.name.length >= 2 && setShowSug(suggestions.length > 0)}
+            onBlur={handleNameBlur}
+            placeholder="Ex: Sanguine Razor" />
+          {showSug && (
+            <ul className="absolute z-20 w-full mt-1 rounded-lg shadow-xl overflow-y-auto"
+              style={{ backgroundColor: '#2a2035', border: '1px solid #3a3050', maxHeight: 160, left: 0 }}>
+              {suggestions.map(it => (
+                <li key={it.name}
+                  className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 text-sm text-gray-200"
+                  onMouseDown={() => selectItem(it)}>
+                  <ItemImage src={it.imageUrl} category={it.category} size={22} />
+                  <span className="flex-1">{it.name}</span>
+                  <span className="text-xs text-gray-500">C{it.classification}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        {showRemove && (
+          <button type="button" onClick={onRemove}
+            className="p-1.5 rounded-lg hover:bg-red-900/40 text-gray-500 hover:text-red-400 transition-colors mt-0.5"
+            title="Remover item">
+            <X size={14} />
+          </button>
+        )}
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <label className={LABEL}>Qtd</label>
+          <input type="number" min="1" step="1"
+            className={INPUT} style={INPUT_STYLE}
+            value={trade.qty}
+            onChange={e => onChange({ ...trade, qty: e.target.value })} />
+        </div>
+        <div className="relative">
+          <label className={LABEL}>Valor est. (RC)</label>
+          <input type="number" min="0" step="1"
+            className={INPUT + ' pr-8'} style={INPUT_STYLE}
+            value={trade.valueRC}
+            onChange={e => onChange({ ...trade, valueRC: e.target.value })}
+            placeholder="0" />
+          <span className="absolute right-2 bottom-2 text-xs font-bold pointer-events-none"
+            style={{ color: '#f59e0b' }}>RC</span>
+        </div>
+        <div className="relative">
+          <label className={LABEL}>Valor est. (R$)</label>
+          <input type="number" min="0" step="0.01"
+            className={INPUT + ' pr-10'} style={INPUT_STYLE}
+            value={trade.valuePIX}
+            onChange={e => onChange({ ...trade, valuePIX: e.target.value })}
+            placeholder="0,00" />
+          <span className="absolute right-2 bottom-2 text-xs font-bold pointer-events-none"
+            style={{ color: '#4ade80' }}>PIX</span>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-  const totalRC  = rc  + (hasTrade ? tRC  : 0)
-  const totalPIX = pix + (hasTrade ? tPIX : 0)
+export default function ItemSaleModal({ item, onConfirm, onClose }) {
+  const maxQty      = item.quantity > 0 ? item.quantity : 1
+  const isZeroStock = item.quantity === 0
+
+  const [qty,        setQty]        = useState(1)
+  const [soldForRC,  setSoldForRC]  = useState(item.sellPriceRC  || '')
+  const [soldForPIX, setSoldForPIX] = useState(item.sellPricePIX || '')
+  const [obs,        setObs]        = useState('')
+  const [syncCoins,  setSyncCoins]  = useState(true)
+
+  const [hasTrade,   setHasTrade]   = useState(false)
+  const [tradeItems, setTradeItems] = useState([emptyTrade()])
+
+  const updateTrade = (idx, updated) =>
+    setTradeItems(prev => prev.map((t, i) => i === idx ? updated : t))
+
+  const removeTrade = (idx) =>
+    setTradeItems(prev => prev.filter((_, i) => i !== idx))
+
+  const addTrade = () =>
+    setTradeItems(prev => [...prev, emptyTrade()])
+
+  const q   = Math.max(1, parseInt(qty)  || 1)
+  const rc  = parseFloat(soldForRC)      || 0
+  const pix = parseFloat(soldForPIX)     || 0
+
+  const totalTradeRC  = tradeItems.reduce((s, t) => s + (parseFloat(t.valueRC)  || 0), 0)
+  const totalTradePIX = tradeItems.reduce((s, t) => s + (parseFloat(t.valuePIX) || 0), 0)
+
+  const totalRC  = rc  + (hasTrade ? totalTradeRC  : 0)
+  const totalPIX = pix + (hasTrade ? totalTradePIX : 0)
 
   const profitRC  = totalRC  - (item.buyPriceRC  || 0) * q
   const profitPIX = totalPIX - (item.buyPricePIX || 0) * q
@@ -93,13 +173,19 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
     e.preventDefault()
     if (q < 1) return
 
+    const validTrades = hasTrade ? tradeItems.filter(t => t.name) : []
+
     let finalObs = obs
-    if (hasTrade && tradeItem) {
-      const tradeDesc = [
-        tradeItem,
-        tRC  > 0 ? `${formatRC(tRC)} est.`        : null,
-        tPIX > 0 ? `${formatCurrency(tPIX)} est.` : null,
-      ].filter(Boolean).join(' · ')
+    if (validTrades.length > 0) {
+      const tradeDesc = validTrades.map(t => {
+        const tRC  = parseFloat(t.valueRC)  || 0
+        const tPIX = parseFloat(t.valuePIX) || 0
+        return [
+          t.name,
+          tRC  > 0 ? `${formatRC(tRC)} est.`        : null,
+          tPIX > 0 ? `${formatCurrency(tPIX)} est.` : null,
+        ].filter(Boolean).join(' ')
+      }).join(', ')
       finalObs = obs ? `${obs} | Troca: ${tradeDesc}` : `Troca: ${tradeDesc}`
     }
 
@@ -110,19 +196,19 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
       observation: finalObs,
       date:        (() => { const d = new Date(), p = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}` })(),
       syncCoins,
-      tradeItemData: hasTrade && tradeItem ? {
-        name:           tradeItem,
-        imageUrl:       tradeImageUrl,
-        category:       tradeCategory,
+      tradeItemsData: validTrades.map(t => ({
+        name:           t.name,
+        imageUrl:       t.imageUrl,
+        category:       t.category,
         vocation:       item.vocation ?? 'ALL',
-        quantity:       tQty,
-        buyPriceRC:     tRC,
-        buyPricePIX:    tPIX,
-        set:            tradeSet,
-        classification: tradeClassification,
-        tier:           tradeTier,
-        maxTier:        tradeMaxTier,
-      } : null,
+        quantity:       Math.max(1, parseInt(t.qty) || 1),
+        buyPriceRC:     parseFloat(t.valueRC)  || 0,
+        buyPricePIX:    parseFloat(t.valuePIX) || 0,
+        set:            t.set,
+        classification: t.classification,
+        tier:           t.tier,
+        maxTier:        t.maxTier,
+      })),
     })
   }
 
@@ -175,91 +261,43 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
             <input type="checkbox" checked={hasTrade} onChange={e => setHasTrade(e.target.checked)}
               style={{ accentColor: '#7c3aed', width: 16, height: 16, flexShrink: 0 }} />
             <span className="font-semibold text-sm" style={{ color: hasTrade ? '#c084fc' : '#9ca3af' }}>
-              🔄 Recebi item em troca (adicionar ao estoque)
+              🔄 Recebi item(s) em troca (adicionar ao estoque)
             </span>
           </label>
 
           {hasTrade && (
             <div className="px-4 pb-4 pt-2 space-y-3" style={{ backgroundColor: '#1e1030' }}>
               <p className="text-[11px]" style={{ color: '#9333ea' }}>
-                Informe o item recebido. Ele será adicionado automaticamente ao estoque.
+                Informe os itens recebidos. Eles serão adicionados automaticamente ao estoque.
               </p>
 
-              {/* Campo de nome com autocomplete + imagem */}
-              <div>
-                <label className={LABEL}>Item recebido</label>
-                <div className="relative" ref={sugRef}>
-                  <div className="flex items-center gap-2">
-                    {/* Imagem do item */}
-                    <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: '#130e1e', border: '1px solid #3a3050' }}>
-                      <ItemImage src={tradeImageUrl} category={tradeCategory} size={28} alt={tradeItem} />
-                    </div>
-                    <input type="text"
-                      className={INPUT + ' flex-1'} style={INPUT_STYLE}
-                      value={tradeItem}
-                      onChange={e => handleTradeNameChange(e.target.value)}
-                      onFocus={() => tradeItem.length >= 2 && setShowSug(suggestions.length > 0)}
-                      onBlur={handleTradeNameBlur}
-                      placeholder="Ex: Sanguine Razor"
-                      autoFocus />
-                  </div>
-
-                  {/* Dropdown de sugestões */}
-                  {showSug && (
-                    <ul className="absolute z-20 w-full mt-1 rounded-lg shadow-xl overflow-y-auto"
-                      style={{ backgroundColor: '#2a2035', border: '1px solid #3a3050', maxHeight: 180, left: 0 }}>
-                      {suggestions.map(it => (
-                        <li key={it.name}
-                          className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 text-sm text-gray-200"
-                          onMouseDown={() => selectTradeItem(it)}>
-                          <ItemImage src={it.imageUrl} category={it.category} size={24} />
-                          <span className="flex-1">{it.name}</span>
-                          <span className="text-xs text-gray-500">C{it.classification}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+              <div className="space-y-2">
+                {tradeItems.map((t, idx) => (
+                  <TradeItemRow
+                    key={t.id}
+                    trade={t}
+                    onChange={updated => updateTrade(idx, updated)}
+                    onRemove={() => removeTrade(idx)}
+                    showRemove={tradeItems.length > 1}
+                  />
+                ))}
               </div>
 
-              {/* Quantidade recebida */}
-              <div>
-                <label className={LABEL}>Quantidade recebida</label>
-                <input type="number" min="1" step="1"
-                  className={INPUT} style={{ ...INPUT_STYLE, maxWidth: 120 }}
-                  value={tradeQty} onChange={e => setTradeQty(e.target.value)} />
-              </div>
+              <button type="button" onClick={addTrade}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold w-full justify-center transition-colors"
+                style={{ backgroundColor: '#2a1a3e', border: '1px dashed #7c3aed', color: '#a78bfa' }}>
+                <Plus size={13} /> Adicionar outro item
+              </button>
 
-              {/* Valor estimado */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative">
-                  <label className={LABEL}>Valor estimado (RC)</label>
-                  <input type="number" min="0" step="1"
-                    className={INPUT + ' pr-8'} style={INPUT_STYLE}
-                    value={tradeValueRC} onChange={e => setTradeValueRC(e.target.value)} placeholder="0" />
-                  <span className="absolute right-2 bottom-2 text-xs font-bold pointer-events-none"
-                    style={{ color: '#f59e0b' }}>RC</span>
-                </div>
-                <div className="relative">
-                  <label className={LABEL}>Valor estimado (R$)</label>
-                  <input type="number" min="0" step="0.01"
-                    className={INPUT + ' pr-12'} style={INPUT_STYLE}
-                    value={tradeValuePIX} onChange={e => setTradeValuePIX(e.target.value)} placeholder="0,00" />
-                  <span className="absolute right-2 bottom-2 text-xs font-bold pointer-events-none"
-                    style={{ color: '#4ade80' }}>PIX</span>
-                </div>
-              </div>
-
-              {(tRC > 0 || tPIX > 0) && (
+              {(totalTradeRC > 0 || totalTradePIX > 0) && (
                 <div className="text-[11px] px-2 py-1.5 rounded-lg flex items-center gap-2"
                   style={{ backgroundColor: '#2a1a3e', color: '#a78bfa' }}>
                   <span>✅</span>
                   <span>
-                    Valor da troca incluído:{' '}
-                    {tRC  > 0 ? formatRC(tRC) : ''}
-                    {tRC  > 0 && tPIX > 0 ? ' + ' : ''}
-                    {tPIX > 0 ? formatCurrency(tPIX) : ''}
+                    Valor total da troca:{' '}
+                    {totalTradeRC  > 0 ? formatRC(totalTradeRC) : ''}
+                    {totalTradeRC  > 0 && totalTradePIX > 0 ? ' + ' : ''}
+                    {totalTradePIX > 0 ? formatCurrency(totalTradePIX) : ''}
                   </span>
                 </div>
               )}
@@ -281,7 +319,7 @@ export default function ItemSaleModal({ item, onConfirm, onClose }) {
               <span className="text-red-400">{formatCurrency(item.buyPricePIX * q)}</span>
             </div>
           )}
-          {hasTrade && (tRC > 0 || tPIX > 0) && (
+          {hasTrade && (totalTradeRC > 0 || totalTradePIX > 0) && (
             <div className="flex justify-between text-xs pt-1" style={{ color: '#a78bfa' }}>
               <span>Total recebido (incl. troca)</span>
               <span>

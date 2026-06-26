@@ -597,13 +597,15 @@ export default function ItemsModule() {
                 pricePerK: 0, totalPaid: 0,
               })
             }
-            if (sale.tradeItemData) {
-              await addItem({
-                ...sale.tradeItemData,
-                server: selling.server,
-                observation: `Recebido em troca de ${selling.name}`,
-                dateEntry: new Date().toISOString(),
-              })
+            if (sale.tradeItemsData?.length > 0) {
+              for (const td of sale.tradeItemsData) {
+                await addItem({
+                  ...td,
+                  server: selling.server,
+                  observation: `Recebido em troca de ${selling.name}`,
+                  dateEntry: new Date().toISOString(),
+                })
+              }
             }
             setSelling(null)
             requestAnimationFrame(() => window.scrollTo({ top: scrollY, behavior: 'instant' }))
