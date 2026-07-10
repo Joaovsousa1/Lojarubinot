@@ -5,18 +5,27 @@ const o0 = (name, file) => ({ name, imageUrl: W + file + '_Male.gif' })
 const r  = (name, file) => ({ name, imageUrl: S + file })
 
 const BASE_OUTFITS = [
-  // ── Vocação base ──────────────────────────────────────────────────────
-  o('Warrior Outfit',       'Outfit_Warrior'),
-  o('Hunter Outfit',        'Outfit_Hunter'),
-  o('Mage Outfit',          'Outfit_Mage'),
-  o('Druid Outfit',         'Outfit_Druid'),
+  // ── Vocação base (própria, automática ao promover) ──────────────────────
   o('Knight Outfit',        'Outfit_Knight'),
   o('Paladin Outfit',       'Outfit_Paladin'),
   o('Sorcerer Outfit',      'Outfit_Sorcerer'),
+  o('Druid Outfit',         'Outfit_Druid'),
   o('Elder Druid Outfit',   'Outfit_Elder_Druid'),
   o('Master Sorcerer Outfit','Outfit_Master_Sorcerer'),
   o('Elite Knight Outfit',  'Outfit_Elite_Knight'),
   o('Royal Paladin Outfit', 'Outfit_Royal_Paladin'),
+
+  // ── Grátis / Premium automático (sem quest, sempre aparecem como "Base") ─
+  o('Citizen Outfit',       'Outfit_Citizen'),
+  o('Hunter Outfit',        'Outfit_Hunter'),
+  o('Mage Outfit',          'Outfit_Mage'),
+  o('Monk Outfit',          'Outfit_Monk'),
+  o('Warrior Outfit',       'Outfit_Warrior'),
+  o('Barbarian Outfit',     'Outfit_Barbarian'),
+  o('Nobleman Outfit',      'Outfit_Nobleman'),
+  o('Oriental Outfit',      'Outfit_Oriental'),
+  o('Summoner Outfit',      'Outfit_Summoner'),
+  o('Wizard Outfit',        'Outfit_Wizard'),
 
   // ── Quest / Evento ────────────────────────────────────────────────────
   o('Dream Warden Outfit',  'Outfit_Dream_Warden'),
@@ -30,11 +39,8 @@ const BASE_OUTFITS = [
   o('Demon Outfit',         'Outfit_Demon'),
   o('Pirate Outfit',        'Outfit_Pirate'),
   o('Norseman Outfit',      'Outfit_Norseman'),
-  o('Barbarian Outfit',     'Outfit_Barbarian'),
   o('Shaman Outfit',        'Outfit_Shaman'),
-  o('Oriental Outfit',      'Outfit_Oriental'),
   o('Jumpsuit Outfit',      'Outfit_Jumpsuit'),
-  o('Wizard Outfit',        'Outfit_Wizard'),
   o('Assassin Outfit',      'Outfit_Assassin'),
   o('Beggar Outfit',        'Outfit_Beggar'),
   o('Necromancer Outfit',   'Outfit_Necromancer'),
@@ -43,11 +49,7 @@ const BASE_OUTFITS = [
   o('Nightmare Outfit',     'Outfit_Nightmare'),
   o('Chaos Acolyte Outfit', 'Outfit_Chaos_Acolyte'),
   o('Dawnport Outfit',      'Outfit_Dawnport'),
-  o('Citizen Outfit',       'Outfit_Citizen'),
-  o('Summoner Outfit',      'Outfit_Summoner'),
-  o('Nobleman Outfit',      'Outfit_Nobleman'),
   o('Soldier Outfit',       'Outfit_Soldier'),
-  o('Monk Outfit',          'Outfit_Monk'),
   o('Elf Outfit',           'Outfit_Elf'),
   o('Dwarf Outfit',         'Outfit_Dwarf'),
   o('Cave Explorer Outfit', 'Outfit_Cave_Explorer'),
@@ -157,8 +159,8 @@ const CUSTOM_OUTFITS = [
   r('Barbarian Fire',                      'special_barbarian_fire_male.gif'),
   { name: 'Eclipse Priest (Paladin)',      imageUrl: null },
   { name: 'Eclipse Priestess (Paladin)',   imageUrl: null },
-  { name: 'Eclipse Priest (Sorcerer)',     imageUrl: null },
-  { name: 'Eclipse Priestess (Sorcerer)',  imageUrl: null },
+  { name: 'Eclipse Priest (Sorcerer/Druid)',     imageUrl: null },
+  { name: 'Eclipse Priestess (Sorcerer/Druid)',  imageUrl: null },
   { name: 'Eclipse Priest (Knight)',       imageUrl: null },
   { name: 'Eclipse Priestess (Knight)',    imageUrl: null },
   { name: 'Eclipse Priest (Monk)',         imageUrl: null },
