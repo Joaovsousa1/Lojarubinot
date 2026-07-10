@@ -27,6 +27,8 @@ const STATUSES  = ['disponível', 'reservada', 'em negociação', 'vendida']
 
 const EMPTY_SKILLS = { ml: '', sword: '', axe: '', dist: '', fist: '', club: '', shielding: '' }
 
+const EMPTY_BATTLE_PASS = [1, 2, 3, 4].map(season => ({ season, deluxe: false, points: '' }))
+
 const EMPTY = {
   charName: '',
   email: '',
@@ -34,7 +36,8 @@ const EMPTY = {
   buyPrice: '', sellPrice: '', status: 'disponível',
   skills: { ...EMPTY_SKILLS },
   charmPoints: '', bosstiaryPoints: '', huntingTaskPoints: '', vipDays: '', loyaltySkill: '',
-  outfits: [], addons: [], mounts: [], notableItems: [],
+  outfits: [], addons: [], mounts: [], notableItems: [], auras: [],
+  battlePass: EMPTY_BATTLE_PASS.map(s => ({ ...s })),
   notes: '', screenshot: null,
 }
 
@@ -197,12 +200,19 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
         addons: [...(initial.addons ?? [])],
         mounts: [...(initial.mounts ?? [])],
         notableItems: [...(initial.notableItems ?? [])],
+        auras: [...(initial.auras ?? [])],
+        battlePass: EMPTY_BATTLE_PASS.map(({ season }) =>
+          initial.battlePass?.find(bp => bp.season === season) ?? { season, deluxe: false, points: '' }
+        ),
       }
     : { ...EMPTY, server: servers[0] ?? '' }
   )
   const fileRef = useRef(null)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
   const setSkill = (k, v) => setForm(f => ({ ...f, skills: { ...f.skills, [k]: v } }))
+  const setBattlePass = (season, patch) => setForm(f => ({
+    ...f, battlePass: f.battlePass.map(bp => bp.season === season ? { ...bp, ...patch } : bp),
+  }))
 
   const handleScreenshot = (e) => {
     const file = e.target.files[0]
@@ -231,6 +241,7 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
       huntingTaskPoints: parseInt(form.huntingTaskPoints) || 0,
       vipDays: parseInt(form.vipDays) || 0,
       loyaltySkill: parseInt(form.loyaltySkill) || 0,
+      battlePass: form.battlePass.map(bp => ({ ...bp, points: parseInt(bp.points) || 0 })),
       dateEntry: initial?.dateEntry ?? new Date().toISOString(),
       dateSold: form.status === 'vendida' ? (initial?.dateSold ?? new Date().toISOString()) : null,
     }
@@ -415,6 +426,35 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
         <Hint>VIP Days e Loyalty Skill aparecem no cabeçalho do anúncio (⏳ X dias de VIP). Charm, Bosstiary e Task Points aparecem no final do post.</Hint>
       </div>
 
+      {/* Battle Pass */}
+      <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050' }}>
+        <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Battle Pass</div>
+        <div className="grid grid-cols-4 gap-2">
+          {form.battlePass.map(({ season, deluxe, points }) => (
+            <div key={season} className="rounded-lg p-2 space-y-1.5" style={{ backgroundColor: '#0e0919', border: '1px solid #3a3050' }}>
+              <div className="text-[10px] text-gray-500 text-center">Temporada {season}</div>
+              <input
+                type="number" min="0"
+                className={NUM_SMALL} style={INPUT_STYLE}
+                value={points}
+                onChange={e => setBattlePass(season, { points: e.target.value })}
+                placeholder="Pts"
+              />
+              <button type="button"
+                onClick={() => setBattlePass(season, { deluxe: !deluxe })}
+                className="w-full py-1 rounded text-[10px] font-semibold transition-colors"
+                style={{
+                  backgroundColor: deluxe ? '#7c3aed' : '#1a1025',
+                  border: '1px solid ' + (deluxe ? '#7c3aed' : '#3a3050'),
+                  color: deluxe ? '#fff' : '#6b7280',
+                }}
+              >{deluxe ? 'Deluxe' : 'Grátis'}</button>
+            </div>
+          ))}
+        </div>
+        <Hint>Consulte na aba "Battlepass" do bazar do personagem. Aparece no anúncio como "🎟️ Passe S4 Deluxe (10.810 pts) · S3 Grátis".</Hint>
+      </div>
+
       {/* Cosmetics */}
       <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050' }}>
         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cosmético</div>
@@ -423,7 +463,8 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
         <TagInput label="Addons" items={form.addons} onChange={v => set('addons', v)} />
         <AutocompleteTagInput label="Montarias" items={form.mounts} onChange={v => set('mounts', v)}
           searchFn={searchMounts} urlMap={MOUNT_URL} chipColor="#1e3a5f" chipBorder="#1e40af" />
-        <Hint>Outfits e montarias aparecem no anúncio como "👕 Outfits (X): ..." e "🐴 Montarias (X): ...". Digite o nome e selecione da lista ou pressione + para adicionar.</Hint>
+        <TagInput label="Auras" items={form.auras} onChange={v => set('auras', v)} />
+        <Hint>Outfits e montarias aparecem no anúncio como "👕 Outfits (X): ..." e "🐴 Montarias (X): ...". Digite o nome e selecione da lista ou pressione + para adicionar. Outfits/montarias exclusivos do RubinOT são destacados automaticamente.</Hint>
       </div>
 
       {/* Notable items */}

@@ -161,6 +161,7 @@ export function AppProvider({ children }) {
       vipDays: row.vip_days, loyaltySkill: row.loyalty_skill,
       outfits: row.outfits ?? [], addons: row.addons ?? [],
       mounts: row.mounts ?? [], notableItems: row.notable_items ?? [],
+      auras: row.auras ?? [], battlePass: row.battle_pass ?? [],
       notes: row.notes, screenshot: row.screenshot,
     }
   }
@@ -204,6 +205,7 @@ export function AppProvider({ children }) {
       vip_days: acc.vipDays, loyalty_skill: acc.loyaltySkill,
       outfits: acc.outfits ?? [], addons: acc.addons ?? [],
       mounts: acc.mounts ?? [], notable_items: acc.notableItems ?? [],
+      auras: acc.auras ?? [], battle_pass: acc.battlePass ?? [],
       notes: acc.notes, screenshot: acc.screenshot,
     }
   }

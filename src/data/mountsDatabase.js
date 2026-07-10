@@ -1,7 +1,7 @@
 const W = 'https://tibia.fandom.com/wiki/Special:FilePath/'
 const m = (name, file) => ({ name, imageUrl: W + 'Mount_' + file + '.gif' })
 
-export const MOUNTS_DATABASE = [
+const BASE_MOUNTS = [
   // ── Store Mounts ──────────────────────────────────────────────────────────
   m('Blazebringer',         'Blazebringer'),
   m('Blazewing',            'Blazewing'),
@@ -87,8 +87,11 @@ export const MOUNTS_DATABASE = [
   m('Ice Witch',            'Ice_Witch'),
   m('Dawnfire Asura',       'Dawnfire_Asura'),
   m('Mutated Abomination',  'Mutated_Abomination'),
+]
 
-  // ── RubinOT Custom Mounts ─────────────────────────────────────────────────
+// Exclusivas do RubinOT (não existem no Tibia base) — usadas pra destacar
+// montarias raras/de passe/evento na hora de anunciar uma conta.
+const CUSTOM_MOUNTS = [
   { name: 'Alba Vulpes',          imageUrl: 'https://wiki.rubinot.com/mounts/rubinot/alba-vulpes.gif' },
   { name: 'Arcane Stonehorn',     imageUrl: 'https://wiki.rubinot.com/mounts/rubinot/arcane-stonehorn.gif' },
   { name: 'Astral Stonehorn',     imageUrl: 'https://wiki.rubinot.com/mounts/rubinot/astral-stonehorn.gif' },
@@ -114,6 +117,9 @@ export const MOUNTS_DATABASE = [
   { name: 'Tenebris Vulpes',      imageUrl: 'https://wiki.rubinot.com/mounts/rubinot/tenebris-vulpes.gif' },
   { name: 'Tombmarch',            imageUrl: 'https://wiki.rubinot.com/mounts/rubinot/tombmarch.gif' },
 ]
+
+export const MOUNTS_DATABASE = [...BASE_MOUNTS, ...CUSTOM_MOUNTS]
+export const CUSTOM_MOUNT_NAMES = new Set(CUSTOM_MOUNTS.map(m => m.name))
 
 export const searchMounts = (query) => {
   if (!query || query.length < 2) return []

@@ -93,7 +93,9 @@ create table if not exists public.accounts (
   outfits             text[] default '{}',
   addons              text[] default '{}',
   mounts              text[] default '{}',
+  auras               text[] default '{}',
   notable_items       text[] default '{}',
+  battle_pass         jsonb default '[]',
   notes               text,
   screenshot          text
 );
@@ -154,6 +156,8 @@ create policy "Admins manage payments" on public.payment_log for all using (publ
 -- MIGRAÇÃO: adicionar colunas novas a tabelas existentes
 -- Execute se o banco já existia antes dessas colunas:
 -- alter table public.items add column if not exists vocation text default 'ALL';
+alter table public.accounts add column if not exists auras text[] default '{}';
+alter table public.accounts add column if not exists battle_pass jsonb default '[]';
 -- ============================================================
 
 -- ============================================================

@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
 import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X, DollarSign } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, formatDate, VOCATION_COLORS, VOCATION_OUTFIT, VOCATION_BG, STATUS_COLORS } from '../../utils/helpers'
-import { OUTFITS_DATABASE } from '../../data/outfitsDatabase'
-import { MOUNTS_DATABASE } from '../../data/mountsDatabase'
+import { OUTFITS_DATABASE, CUSTOM_OUTFIT_NAMES } from '../../data/outfitsDatabase'
+import { MOUNTS_DATABASE, CUSTOM_MOUNT_NAMES } from '../../data/mountsDatabase'
 import Modal from '../UI/Modal'
 import AccountForm from './AccountForm'
 import LoyaltyModule from './LoyaltyModule'
@@ -23,6 +23,12 @@ function getLoyaltyBonus(pts) {
     if (p >= LOYALTY_TIERS[i]) return LOYALTY_TIERS.length - i
   }
   return 0
+}
+
+function getExclusives(acc) {
+  const outfits = (acc.outfits ?? []).filter(n => CUSTOM_OUTFIT_NAMES.has(n))
+  const mounts  = (acc.mounts  ?? []).filter(n => CUSTOM_MOUNT_NAMES.has(n))
+  return { outfits, mounts, all: [...outfits, ...mounts] }
 }
 
 function VocBadge({ vocation }) {
@@ -141,7 +147,14 @@ function generateSalesText(acc) {
   if (acc.mounts?.length) {
     add(`🐴 Montarias (${acc.mounts.length}): ${acc.mounts.join(', ')}`)
   }
-  if (acc.outfits?.length || acc.mounts?.length) add()
+  if (acc.auras?.length) {
+    add(`🔮 Auras: ${acc.auras.join(', ')}`)
+  }
+  const exclusives = getExclusives(acc)
+  if (exclusives.all.length) {
+    add(`🌟 Exclusivos: ${exclusives.all.join(', ')}`)
+  }
+  if (acc.outfits?.length || acc.mounts?.length || acc.auras?.length || exclusives.all.length) add()
 
   // ── Diferenciais (campo Observações → texto livre do usuário) ───────────────
   if (acc.notes) {
@@ -157,6 +170,13 @@ function generateSalesText(acc) {
     if (acc.charmPoints       > 0) add(`🧠 ${fmt(acc.charmPoints)} Charm Points`)
     if (acc.bosstiaryPoints   > 0) add(`⚔️  ${fmt(acc.bosstiaryPoints)} Boss Points`)
     if (acc.huntingTaskPoints > 0) add(`🏆 ${fmt(acc.huntingTaskPoints)} Hunting Task Points`)
+    add()
+  }
+
+  // ── Battle Pass ─────────────────────────────────────────────────────────────
+  const passes = (acc.battlePass ?? []).filter(bp => bp.points > 0 || bp.deluxe)
+  if (passes.length) {
+    add(`🎟️ Passe de Batalha: ${passes.map(bp => `S${bp.season} ${bp.deluxe ? 'Deluxe' : 'Grátis'} (${fmt(bp.points)} pts)`).join(' · ')}`)
     add()
   }
 
@@ -380,7 +400,9 @@ function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) {
   const vColor = VOCATION_COLORS[acc.vocation] ?? '#6b7280'
 
   const hasSkills = acc.skills && Object.values(acc.skills).some(v => v > 0)
-  const hasProgress = acc.charmPoints || acc.bosstiaryPoints || acc.huntingTaskPoints || acc.vipDays || acc.loyaltySkill
+  const passes = (acc.battlePass ?? []).filter(bp => bp.points > 0 || bp.deluxe)
+  const hasProgress = acc.charmPoints || acc.bosstiaryPoints || acc.huntingTaskPoints || acc.vipDays || acc.loyaltySkill || passes.length
+  const exclusives = getExclusives(acc)
 
   // Outfits com imagem disponível
   const outfitNames = acc.outfits ?? []
@@ -509,6 +531,29 @@ function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) {
             {acc.huntingTaskPoints > 0 && <StatChip label="Tasks"    value={acc.huntingTaskPoints} color="#34d399" />}
             {acc.vipDays           > 0 && <StatChip label="VIP dias" value={acc.vipDays}           color="#fbbf24" />}
             {acc.loyaltySkill      > 0 && <StatChip label={`Loyalty +${getLoyaltyBonus(acc.loyaltySkill)}`} value={acc.loyaltySkill} color="#c084fc" />}
+            {passes.map(bp => (
+              <StatChip key={bp.season} label={`Passe S${bp.season}${bp.deluxe ? ' ★' : ''}`} value={bp.points} color={bp.deluxe ? '#facc15' : '#9ca3af'} />
+            ))}
+          </div>
+        )}
+
+        {/* Exclusivos do servidor */}
+        {exclusives.all.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {exclusives.all.map((name, i) => (
+              <span key={i} className="px-1.5 py-0.5 rounded text-[11px] font-medium"
+                style={{ backgroundColor: '#78350f22', color: '#facc15', border: '1px solid #78350f55' }}>🌟 {name}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Auras */}
+        {acc.auras?.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {acc.auras.map((name, i) => (
+              <span key={i} className="px-1.5 py-0.5 rounded text-[11px]"
+                style={{ backgroundColor: '#1e1b4b', color: '#a78bfa', border: '1px solid #4c1d95' }}>🔮 {name}</span>
+            ))}
           </div>
         )}
 

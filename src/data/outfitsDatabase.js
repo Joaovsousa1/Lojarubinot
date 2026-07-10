@@ -4,7 +4,7 @@ const o  = (name, file) => ({ name, imageUrl: W + file + '_Male_Addon_3.gif' })
 const o0 = (name, file) => ({ name, imageUrl: W + file + '_Male.gif' })
 const r  = (name, file) => ({ name, imageUrl: S + file })
 
-export const OUTFITS_DATABASE = [
+const BASE_OUTFITS = [
   // ── Vocação base ──────────────────────────────────────────────────────
   o('Warrior Outfit',       'Outfit_Warrior'),
   o('Hunter Outfit',        'Outfit_Hunter'),
@@ -79,8 +79,11 @@ export const OUTFITS_DATABASE = [
   o('Blacksmith Outfit',    'Outfit_Blacksmith'),
   o('Viking Outfit',        'Outfit_Viking'),
   o('Parcel Outfit',        'Outfit_Parcel'),
+]
 
-  // ── RubinOT Custom Outfits ────────────────────────────────────────────────
+// Exclusivos do RubinOT (não existem no Tibia base) — usados pra destacar
+// outfits raros/de passe/evento na hora de anunciar uma conta.
+const CUSTOM_OUTFITS = [
   { name: 'Demonic Kid',                   imageUrl: null },
   { name: 'Angelical Kid',                 imageUrl: null },
   r('Gladiator',                           'Gladiator%20Male.gif'),
@@ -177,6 +180,9 @@ export const OUTFITS_DATABASE = [
   { name: 'Frostbringer',                  imageUrl: null },
   { name: 'Flamebringer',                  imageUrl: null },
 ]
+
+export const OUTFITS_DATABASE = [...BASE_OUTFITS, ...CUSTOM_OUTFITS]
+export const CUSTOM_OUTFIT_NAMES = new Set(CUSTOM_OUTFITS.map(o => o.name))
 
 export const searchOutfits = (query) => {
   if (!query || query.length < 2) return []
