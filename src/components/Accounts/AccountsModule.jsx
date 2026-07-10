@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
-import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X, DollarSign } from 'lucide-react'
+import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X, DollarSign, LayoutGrid, List } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, formatDate, VOCATION_COLORS, VOCATION_OUTFIT, VOCATION_BG, STATUS_COLORS } from '../../utils/helpers'
 import { OUTFITS_DATABASE, CUSTOM_OUTFIT_NAMES } from '../../data/outfitsDatabase'
@@ -703,6 +703,77 @@ function AccountCard({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) {
   )
 }
 
+function AccountListRow({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) {
+  const profit = acc.sellPrice - acc.buyPrice
+  const vColor = VOCATION_COLORS[acc.vocation] ?? '#6b7280'
+  const exclusives = getExclusives(acc)
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2 rounded-lg flex-wrap"
+      style={{ backgroundColor: '#2a2035', border: `1px solid ${vColor}44` }}>
+
+      <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0" style={{ backgroundColor: '#00000066', color: vColor }}>
+        Lv {acc.level}
+      </span>
+      <VocBadge vocation={acc.vocation} />
+
+      <div className="min-w-0" style={{ width: 170 }}>
+        <div className="text-white text-sm font-semibold truncate">{acc.charName || '—'}</div>
+        <div className="text-gray-500 text-xs truncate">{acc.server}</div>
+      </div>
+
+      <StatusBadge status={acc.status} />
+
+      <div className="flex flex-wrap gap-1 flex-1 min-w-32">
+        {acc.charmPoints       > 0 && <StatChip label="Charm" value={acc.charmPoints} color="#f472b6" />}
+        {acc.loyaltySkill      > 0 && <StatChip label={`Loyalty +${getLoyaltyBonus(acc.loyaltySkill)}`} value={acc.loyaltySkill} color="#c084fc" />}
+        {acc.vipDays           > 0 && <StatChip label="VIP dias" value={acc.vipDays} color="#fbbf24" />}
+        {exclusives.all.length  > 0 && <StatChip label="Exclusivos" value={exclusives.all.length} color="#facc15" />}
+      </div>
+
+      <div className="flex items-center gap-3 text-xs shrink-0">
+        <div className="text-center">
+          <div className="text-gray-500 text-[10px]">Compra</div>
+          <div className="text-gray-300 font-medium">{formatCurrency(acc.buyPrice)}</div>
+        </div>
+        <div className="text-center">
+          <div className="text-gray-500 text-[10px]">Lucro</div>
+          <div className="font-bold" style={{ color: profit >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(profit)}</div>
+        </div>
+        <div className="text-center">
+          <div className="text-gray-500 text-[10px]">Venda</div>
+          <div className="font-bold text-white">{formatCurrency(acc.sellPrice)}</div>
+        </div>
+      </div>
+
+      <div className="flex gap-1.5 shrink-0">
+        <button onClick={onEdit} title="Editar"
+          className="p-1.5 rounded-lg transition-colors"
+          style={{ backgroundColor: '#3b0764', border: '1px solid #6d28d9', color: '#c084fc' }}
+        ><Pencil size={12} /></button>
+        {acc.status !== 'vendida' && (
+          <button onClick={onSell} title="Marcar como vendida"
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ backgroundColor: '#14532d', border: '1px solid #16a34a', color: '#4ade80' }}
+          ><DollarSign size={13} /></button>
+        )}
+        <button onClick={onAnnounce} title="Faça seu anúncio"
+          className="p-1.5 rounded-lg transition-colors"
+          style={{ backgroundColor: '#1e3a5f', border: '1px solid #1e40af', color: '#60a5fa' }}
+        ><Megaphone size={13} /></button>
+        <button onClick={onClone} title="Duplicar conta"
+          className="p-1.5 rounded-lg transition-colors"
+          style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#9ca3af' }}
+        ><Copy size={12} /></button>
+        <button onClick={onDelete} title="Excluir"
+          className="p-1.5 rounded-lg transition-colors"
+          style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', color: '#ef4444' }}
+        ><Trash2 size={12} /></button>
+      </div>
+    </div>
+  )
+}
+
 const SORT_OPTIONS = [
   { value: 'loyalty-desc', label: 'Loyalty ↓' },
   { value: 'loyalty-asc',  label: 'Loyalty ↑' },
@@ -725,6 +796,8 @@ export default function AccountsModule() {
   const [filters, setFilters] = useState({ vocation: '', server: '', status: '' })
   const [search, setSearch] = useState('')
   const [sortVal, setSortVal] = useState('loyalty-desc')
+  const [viewMode, setViewMode] = useState(() => sessionStorage.getItem('rubinot_accounts_view') ?? 'grid')
+  const setView = (v) => { setViewMode(v); sessionStorage.setItem('rubinot_accounts_view', v) }
 
   const setFilter = (k, v) => setFilters(f => ({ ...f, [k]: v }))
 
@@ -851,6 +924,16 @@ export default function AccountsModule() {
         <select className={SELECT} style={SELECT_STYLE} value={sortVal} onChange={e => setSortVal(e.target.value)}>
           {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
+        <div className="flex gap-1 p-1 rounded-lg" style={{ backgroundColor: '#2a2035', border: '1px solid #3a3050' }}>
+          <button type="button" onClick={() => setView('grid')} title="Visualização em grade"
+            className="p-1.5 rounded transition-colors"
+            style={{ backgroundColor: viewMode === 'grid' ? '#7c3aed' : 'transparent', color: viewMode === 'grid' ? '#fff' : '#6b7280' }}
+          ><LayoutGrid size={15} /></button>
+          <button type="button" onClick={() => setView('list')} title="Visualização em lista"
+            className="p-1.5 rounded transition-colors"
+            style={{ backgroundColor: viewMode === 'list' ? '#7c3aed' : 'transparent', color: viewMode === 'list' ? '#fff' : '#6b7280' }}
+          ><List size={15} /></button>
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -858,17 +941,20 @@ export default function AccountsModule() {
       ) : (() => {
         const forSale = filtered.filter(a => a.status !== 'vendida')
         const sold    = filtered.filter(a => a.status === 'vendida')
-        const renderCard = (acc) => (
-          <AccountCard
-            key={acc.id}
-            acc={acc}
-            onEdit={() => setEditing(acc)}
-            onClone={() => handleClone(acc)}
-            onAnnounce={() => setAnnouncing(acc)}
-            onSell={() => setSelling(acc)}
-            onDelete={() => { if (confirm(`Excluir conta ${acc.charName || acc.vocation + ' Lv' + acc.level}?`)) deleteAccount(acc.id) }}
-          />
-        )
+        const rowProps = (acc) => ({
+          key: acc.id,
+          acc,
+          onEdit: () => setEditing(acc),
+          onClone: () => handleClone(acc),
+          onAnnounce: () => setAnnouncing(acc),
+          onSell: () => setSelling(acc),
+          onDelete: () => { if (confirm(`Excluir conta ${acc.charName || acc.vocation + ' Lv' + acc.level}?`)) deleteAccount(acc.id) },
+        })
+        const renderCard = (acc) => <AccountCard {...rowProps(acc)} />
+        const renderRow  = (acc) => <AccountListRow {...rowProps(acc)} />
+        const listOf = (accs) => viewMode === 'grid'
+          ? <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">{accs.map(renderCard)}</div>
+          : <div className="flex flex-col gap-2">{accs.map(renderRow)}</div>
         return (
           <div className="space-y-8">
             {forSale.length > 0 && (
@@ -880,9 +966,7 @@ export default function AccountsModule() {
                   </span>
                   <div className="flex-1 h-px" style={{ backgroundColor: '#2a2035' }} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {forSale.map(renderCard)}
-                </div>
+                {listOf(forSale)}
               </div>
             )}
 
@@ -896,9 +980,7 @@ export default function AccountsModule() {
                   </span>
                   <div className="flex-1 h-px" style={{ backgroundColor: '#1f2937' }} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 opacity-70">
-                  {sold.map(renderCard)}
-                </div>
+                <div className="opacity-70">{listOf(sold)}</div>
               </div>
             )}
           </div>
