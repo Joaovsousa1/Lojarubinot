@@ -42,6 +42,37 @@ export default function AdminPanel() {
   const [selfActivated, setSelfActivated] = useState(false)
   const [selfError, setSelfError] = useState('')
   const [myProfile, setMyProfile] = useState(null)
+  const [activatingAll, setActivatingAll] = useState(false)
+  const [activateAllMsg, setActivateAllMsg] = useState('')
+  const [sqlToCopy, setSqlToCopy] = useState('')
+  const [sqlCopied, setSqlCopied] = useState(false)
+
+  const activateAllPlans = async () => {
+    setActivatingAll(true)
+    setActivateAllMsg('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Sem sessão ativa')
+      const res = await fetch('/api/activate-all-plans', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Erro')
+      if (json.needsSQL) {
+        setActivateAllMsg('SQL_NEEDED')
+        setSqlToCopy(json.sql)
+        return
+      }
+      setActivateAllMsg(`✓ ${json.activated ?? 0} plano(s) ativado(s)!`)
+      loadData()
+    } catch (e) {
+      setActivateAllMsg(`Erro: ${e.message}`)
+    } finally {
+      setActivatingAll(false)
+    }
+  }
 
   const loadMyProfile = useCallback(async () => {
     if (!user?.id) return
@@ -80,28 +111,40 @@ export default function AdminPanel() {
 
   const loadData = useCallback(async () => {
     setLoading(true)
+    try {
+      const [
+        { data: profiles,      error: pe },
+        { data: coinCounts,    error: ce },
+        { data: itemCounts,    error: ie },
+        { data: accountCounts, error: ae },
+        { data: payments,      error: pye },
+      ] = await Promise.all([
+        supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+        supabase.from('coins').select('user_id'),
+        supabase.from('items').select('user_id'),
+        supabase.from('accounts').select('user_id'),
+        supabase.from('payment_log').select('*').order('paid_at', { ascending: false }),
+      ])
 
-    // Load all profiles
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false })
+      if (pe) console.error('[AdminPanel] profiles:', pe.message)
+      if (ce) console.error('[AdminPanel] coins:', ce.message)
+      if (ie) console.error('[AdminPanel] items:', ie.message)
+      if (ae) console.error('[AdminPanel] accounts:', ae.message)
+      if (pye) console.error('[AdminPanel] payments:', pye.message)
 
-    // Load usage metrics per user
-    const { data: coinCounts }   = await supabase.from('coins').select('user_id')
-    const { data: itemCounts }   = await supabase.from('items').select('user_id')
-    const { data: accountCounts } = await supabase.from('accounts').select('user_id')
-    const { data: payments }     = await supabase.from('payment_log').select('*').order('paid_at', { ascending: false })
+      const m = {}
+      ;(coinCounts    ?? []).forEach(r => { m[r.user_id] = m[r.user_id] ?? {}; m[r.user_id].coins    = (m[r.user_id].coins    ?? 0) + 1 })
+      ;(itemCounts    ?? []).forEach(r => { m[r.user_id] = m[r.user_id] ?? {}; m[r.user_id].items    = (m[r.user_id].items    ?? 0) + 1 })
+      ;(accountCounts ?? []).forEach(r => { m[r.user_id] = m[r.user_id] ?? {}; m[r.user_id].accounts = (m[r.user_id].accounts ?? 0) + 1 })
 
-    const m = {}
-    ;(coinCounts    ?? []).forEach(r => { m[r.user_id] = m[r.user_id] ?? {}; m[r.user_id].coins    = (m[r.user_id].coins    ?? 0) + 1 })
-    ;(itemCounts    ?? []).forEach(r => { m[r.user_id] = m[r.user_id] ?? {}; m[r.user_id].items    = (m[r.user_id].items    ?? 0) + 1 })
-    ;(accountCounts ?? []).forEach(r => { m[r.user_id] = m[r.user_id] ?? {}; m[r.user_id].accounts = (m[r.user_id].accounts ?? 0) + 1 })
-
-    setUsers(profiles ?? [])
-    setMetrics(m)
-    setPaymentLog(payments ?? [])
-    setLoading(false)
+      setUsers(profiles ?? [])
+      setMetrics(m)
+      setPaymentLog(payments ?? [])
+    } catch (err) {
+      console.error('[AdminPanel] loadData exception:', err)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => { loadData() }, [loadData])
@@ -218,6 +261,56 @@ export default function AdminPanel() {
             </button>
             {selfError && <div className="text-xs text-red-400 max-w-xs text-right">{selfError}</div>}
           </div>
+        </div>
+
+        {/* Ativar todos os planos */}
+        <div className="mt-3 pt-3" style={{ borderTop: '1px solid #3a3050' }}>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="text-xs text-gray-500">
+              Ativar planos de <strong className="text-white">{users.filter(u => !u.plan_active).length}</strong> usuário(s) inativo(s)
+            </div>
+            <div className="flex items-center gap-3">
+              {activateAllMsg && activateAllMsg !== 'SQL_NEEDED' && (
+                <span className="text-xs" style={{ color: activateAllMsg.startsWith('✓') ? '#4ade80' : '#f87171' }}>
+                  {activateAllMsg}
+                </span>
+              )}
+              <button onClick={activateAllPlans} disabled={activatingAll}
+                className="text-xs px-4 py-2 rounded-lg font-semibold"
+                style={{ backgroundColor: '#1e3a5f', color: '#60a5fa', border: '1px solid #1d4ed8', opacity: activatingAll ? 0.6 : 1, cursor: activatingAll ? 'not-allowed' : 'pointer' }}>
+                {activatingAll ? 'Ativando...' : '⚡ Ativar todos os planos'}
+              </button>
+            </div>
+          </div>
+
+          {/* SQL fallback — aparece quando service role key não está configurada */}
+          {(activateAllMsg === 'SQL_NEEDED' || users.length === 0) && (
+            <div className="mt-3 rounded-xl p-4 space-y-3" style={{ backgroundColor: '#0f172a', border: '1px solid #1d4ed8' }}>
+              <div className="flex items-center gap-2">
+                <span style={{ fontSize: 16 }}>🔧</span>
+                <span className="text-xs font-bold" style={{ color: '#60a5fa' }}>Configure o banco via Supabase SQL Editor</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Acesse <strong className="text-white">supabase.com → seu projeto → SQL Editor</strong> e execute:
+              </p>
+              <div className="rounded-lg p-3 font-mono text-xs relative" style={{ backgroundColor: '#1e293b', color: '#7dd3fc', border: '1px solid #334155', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+{`-- Ativar TODOS os planos
+UPDATE public.profiles SET plan_active = true, plan_expires_at = null;
+
+-- Tornar seu usuário admin
+UPDATE public.profiles SET is_admin = true WHERE email = 'regeditelite@gmail.com';`}
+              </div>
+              <button
+                onClick={() => {
+                  const sql = `UPDATE public.profiles SET plan_active = true, plan_expires_at = null;\n\nUPDATE public.profiles SET is_admin = true WHERE email = 'regeditelite@gmail.com';`
+                  navigator.clipboard.writeText(sql).then(() => { setSqlCopied(true); setTimeout(() => setSqlCopied(false), 2500) })
+                }}
+                className="text-xs px-3 py-1.5 rounded-lg font-semibold"
+                style={{ backgroundColor: sqlCopied ? '#14532d' : '#1e3a5f', color: sqlCopied ? '#4ade80' : '#93c5fd', border: `1px solid ${sqlCopied ? '#16a34a' : '#2563eb'}` }}>
+                {sqlCopied ? '✓ Copiado!' : '📋 Copiar SQL'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

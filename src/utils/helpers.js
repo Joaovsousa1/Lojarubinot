@@ -115,6 +115,10 @@ export const SET_COLORS = {
   'Ferumbras':      { primary: '#7e22ce', secondary: '#3b0764', accent: '#d8b4fe', glow: '#7e22ce44' },
   'Magician':       { primary: '#6366f1', secondary: '#1e1b4b', accent: '#a5b4fc', glow: '#6366f144' },
   'Primal':         { primary: '#06b6d4', secondary: '#0c4a6e', accent: '#67e8f9', glow: '#06b6d444' },
+  'Spiritthorn':    { primary: '#be123c', secondary: '#4c0519', accent: '#fda4af', glow: '#be123c44' },
   'Stag':           { primary: '#65a30d', secondary: '#1a2e05', accent: '#bef264', glow: '#65a30d44' },
+  'Ethereal':       { primary: '#38bdf8', secondary: '#0c4a6e', accent: '#e0f2fe', glow: '#38bdf844' },
+  'Arcanomancer':   { primary: '#818cf8', secondary: '#1e1b4b', accent: '#c7d2fe', glow: '#818cf844' },
+  'Arboreal':       { primary: '#34d399', secondary: '#064e3b', accent: '#d1fae5', glow: '#34d39944' },
   'Outros':         { primary: '#6b7280', secondary: '#374151', accent: '#d1d5db', glow: '#6b728044' },
 }

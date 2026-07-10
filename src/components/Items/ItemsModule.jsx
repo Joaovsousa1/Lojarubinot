@@ -19,13 +19,13 @@ function PriceCell({ rc, pix }) {
   )
 }
 
-function ProfitCell({ buyPriceRC, buyPricePIX, sellPriceRC, sellPricePIX, rcRate, sales = [] }) {
+function ProfitCell({ buyPriceRC, buyPricePIX, sellPriceRC, sellPricePIX, rcRate, sales = [], quantity }) {
   const hasBuy  = (buyPriceRC  || 0) > 0 || (buyPricePIX  || 0) > 0
   const hasSell = (sellPriceRC || 0) > 0 || (sellPricePIX || 0) > 0
   const rate    = rcRate || 0.087
 
   // Item já vendido (sem preço listado): usa lucro real das vendas registradas
-  if (!hasSell && sales.length > 0) {
+  if ((!hasSell || quantity === 0) && sales.length > 0) {
     const realized = sales.reduce((sum, s) =>
       sum + (s.profitPIX || 0) + (s.profitRC || 0) * rate, 0)
     return (
@@ -230,16 +230,25 @@ export default function ItemsModule() {
     const inStock = filtered.filter(i => i.quantity > 0)
     const rate = settings.rcRate || 0
     if (rate > 0) {
-      const profitPIX = inStock.reduce((s, i) => {
+      const investedPIX = inStock.reduce((s, i) => {
+        const buy = (i.buyPricePIX || 0) + (i.buyPriceRC || 0) * rate
+        return s + buy * i.quantity
+      }, 0)
+      const withSell = inStock.filter(i => (i.sellPricePIX || 0) > 0 || (i.sellPriceRC || 0) > 0)
+      const profitPIX = withSell.reduce((s, i) => {
         const buy  = (i.buyPricePIX  || 0) + (i.buyPriceRC  || 0) * rate
         const sell = (i.sellPricePIX || 0) + (i.sellPriceRC || 0) * rate
         return s + (sell - buy) * i.quantity
       }, 0)
-      return { profitRC: 0, profitPIX, count: inStock.length }
+      return { profitRC: 0, profitPIX, investedPIX, count: inStock.length }
     }
+    const investedPIX = inStock.reduce((s, i) => s + (i.buyPricePIX || 0) * i.quantity, 0)
+    const investedRC  = inStock.reduce((s, i) => s + (i.buyPriceRC  || 0) * i.quantity, 0)
+    const withSell = inStock.filter(i => (i.sellPricePIX || 0) > 0 || (i.sellPriceRC || 0) > 0)
     return {
-      profitRC:  inStock.reduce((s, i) => s + ((i.sellPriceRC  || 0) - (i.buyPriceRC  || 0)) * i.quantity, 0),
-      profitPIX: inStock.reduce((s, i) => s + ((i.sellPricePIX || 0) - (i.buyPricePIX || 0)) * i.quantity, 0),
+      profitRC:   withSell.reduce((s, i) => s + ((i.sellPriceRC  || 0) - (i.buyPriceRC  || 0)) * i.quantity, 0),
+      profitPIX:  withSell.reduce((s, i) => s + ((i.sellPricePIX || 0) - (i.buyPricePIX || 0)) * i.quantity, 0),
+      investedPIX, investedRC,
       count: inStock.length,
     }
   }, [filtered, settings.rcRate])
@@ -285,10 +294,11 @@ export default function ItemsModule() {
         const sorted = pool
           .filter(it => getVoc(it) === key)
           .sort((a, b) => getPrice(b) - getPrice(a))
-        const seenNames = new Set()
+        const seenKeys = new Set()
         const deduped = sorted.filter(it => {
-          if (seenNames.has(it.name)) return false
-          seenNames.add(it.name)
+          const key = it.name + "_T" + (it.tier ?? 0)
+          if (seenKeys.has(key)) return false
+          seenKeys.add(key)
           return true
         })
         return deduped.length > 0 ? `${label} ${deduped.map(it => (it.tier ?? 0) > 0 ? `${it.name} (TIER ${it.tier})` : it.name).join(' • ')}` : null
@@ -317,10 +327,21 @@ export default function ItemsModule() {
         <div>
           <h1 className="text-2xl font-bold text-white">Itens</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            {totals.count} em estoque &nbsp;·&nbsp;lucro potencial:&nbsp;
-            {totals.profitRC  !== 0 && <span style={{ color: '#fbbf24' }}>{formatRC(totals.profitRC)}</span>}
-            {totals.profitRC !== 0 && totals.profitPIX !== 0 && <span className="text-gray-600"> + </span>}
-            {totals.profitPIX !== 0 && <span style={{ color: '#4ade80' }}>{formatCurrency(totals.profitPIX)}</span>}
+            {totals.count} em estoque
+            {(totals.investedPIX > 0 || totals.investedRC > 0) && (
+              <>&nbsp;·&nbsp;investido:&nbsp;
+                {totals.investedRC  > 0 && <span style={{ color: '#f59e0b' }}>{formatRC(totals.investedRC)}</span>}
+                {totals.investedRC  > 0 && totals.investedPIX > 0 && <span className="text-gray-600"> + </span>}
+                {totals.investedPIX > 0 && <span style={{ color: '#4ade80' }}>{formatCurrency(totals.investedPIX)}</span>}
+              </>
+            )}
+            {(totals.profitRC !== 0 || totals.profitPIX !== 0) && (
+              <>&nbsp;·&nbsp;lucro potencial:&nbsp;
+                {totals.profitRC  !== 0 && <span style={{ color: '#fbbf24' }}>{formatRC(totals.profitRC)}</span>}
+                {totals.profitRC  !== 0 && totals.profitPIX !== 0 && <span className="text-gray-600"> + </span>}
+                {totals.profitPIX !== 0 && <span style={{ color: totals.profitPIX >= 0 ? '#4ade80' : '#f87171' }}>{formatCurrency(totals.profitPIX)}</span>}
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -509,6 +530,7 @@ export default function ItemsModule() {
                         sellPriceRC={it.sellPriceRC || 0} sellPricePIX={it.sellPricePIX || 0}
                         rcRate={settings.rcRate || 0}
                         sales={it.sales || []}
+                        quantity={it.quantity}
                       />
                     </td>
                     <td className="px-4 py-3">

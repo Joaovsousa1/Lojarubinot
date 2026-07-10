@@ -169,6 +169,7 @@ export default function LoginPage() {
   const [loading, setLoading]       = useState(false)
   const [showPw, setShowPw]         = useState(false)
   const [rememberEmail, setRememberEmail] = useState(false)
+  const [resetSent, setResetSent]   = useState(false)
   const formRef = useRef(null)
 
   useEffect(() => {
@@ -185,13 +186,33 @@ export default function LoginPage() {
     setEmail(''); setPassword(''); setName(''); setConfirm('')
   }
 
+  // Limpa sessão da memória interna do supabase-js SEM fazer fetch
+  // scope:'local' não chama a API — apenas apaga estado interno e localStorage
+  const resetSession = async () => {
+    try { await supabase.auth.signOut({ scope: 'local' }) } catch {}
+    try { Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-')) localStorage.removeItem(k) }) } catch {}
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault(); setError(''); setLoading(true)
     if (rememberEmail) localStorage.setItem('rubinot_remember_email', email)
     else localStorage.removeItem('rubinot_remember_email')
-    const err = await signIn(email, password)
-    setLoading(false)
-    if (err) setError(err.message ?? 'E-mail ou senha incorretos.')
+
+    // Limpa sessão corrompida do localStorage sem chamar API
+    try { Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-')) localStorage.removeItem(k) }) } catch {}
+
+    try {
+      const err = await signIn(email, password)
+      setLoading(false)
+      if (!err) return
+      const msg = err.message ?? ''
+      if (msg === 'Invalid login credentials') { setError('E-mail ou senha incorretos.'); return }
+      if (msg.includes('Email not confirmed')) { setError('Confirme seu e-mail antes de entrar.'); return }
+      setError(msg || 'E-mail ou senha incorretos.')
+    } catch (ex) {
+      setLoading(false)
+      setError('Erro de conexão. Verifique sua internet.')
+    }
   }
 
   const handleRegister = async (e) => {
@@ -206,6 +227,22 @@ export default function LoginPage() {
     setLoading(false)
     if (signUpError) { setError(signUpError.message ?? 'Erro ao criar conta.'); return }
     setSuccess('Conta criada! Aguarde a ativação pelo administrador.')
+  }
+
+  const clearCacheAndReload = async () => {
+    await resetSession()
+    window.location.reload()
+  }
+
+  const handleForgotPassword = async () => {
+    if (!email) { setError('Digite seu e-mail primeiro.'); return }
+    setLoading(true); setError('')
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://minhalojarubinot.vercel.app/nova-senha',
+    })
+    setLoading(false)
+    if (err) { setError(err.message); return }
+    setResetSent(true)
   }
 
   const scrollToForm = () => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -447,6 +484,22 @@ export default function LoginPage() {
               >
                 {loading ? 'Entrando...' : '✦  Entrar no sistema'}
               </button>
+
+              {resetSent && (
+                <div style={{ backgroundColor: 'rgba(20,83,45,0.35)', border: '1px solid rgba(22,163,74,0.45)', borderRadius: 9, padding: '10px 14px', fontSize: 13, color: '#4ade80', marginTop: 10, textAlign: 'center' }}>
+                  ✅ E-mail de redefinição enviado! Verifique sua caixa de entrada.
+                </div>
+              )}
+              <div style={{ textAlign: 'center', marginTop: 14, display: 'flex', justifyContent: 'space-between' }}>
+                <button type="button" onClick={handleForgotPassword} disabled={loading}
+                  style={{ background: 'none', border: 'none', fontSize: 12, color: '#a78bfa', cursor: 'pointer', textDecoration: 'underline' }}>
+                  Esqueci a senha
+                </button>
+                <button type="button" onClick={clearCacheAndReload}
+                  style={{ background: 'none', border: 'none', fontSize: 11, color: '#475569', cursor: 'pointer', textDecoration: 'underline' }}>
+                  Problemas? Limpar cache
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleRegister}>

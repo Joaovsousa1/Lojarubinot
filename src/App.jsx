@@ -13,6 +13,7 @@ import Settings from './components/Settings/Settings'
 import ToolsModule from './components/Tools/ToolsModule'
 
 import LoginPage from './pages/LoginPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import PlanExpiredPage from './pages/PlanExpiredPage'
 import AdminPanel from './pages/AdminPanel'
 import MonthlyReport from './components/Reports/MonthlyReport'
@@ -51,6 +52,53 @@ function ToastContainer() {
 }
 
 // ── Main app shell ─────────────────────────────────────────────────────────
+function LoadErrorBanner() {
+  const { dataLoaded, loadError, loadData } = useApp()
+  const { signOut } = useAuth()
+  const [dismissed, setDismissed] = React.useState(false)
+
+  if (dismissed || !dataLoaded || !loadError) return null
+
+  const msg = loadError.message ?? ''
+  const isAuthError = msg.includes('JWT') || msg.includes('auth') || loadError.code === 'PGRST301' || loadError.code === '401' || msg.includes('expired')
+  const isNetworkError = !loadError.code && !msg
+
+  return (
+    <div className="px-4 py-3 text-xs" style={{ backgroundColor: '#1c0a00', borderBottom: '1px solid #b45309' }}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <div className="font-bold" style={{ color: '#fbbf24' }}>
+            {isAuthError ? '🔑 Sessão expirada' : isNetworkError ? '📡 Erro de conexão' : '⚠️ Erro ao carregar dados'}
+          </div>
+          <div style={{ color: '#d97706' }}>
+            {isAuthError
+              ? 'Sua sessão expirou. Faça logout e entre novamente — seus dados estão seguros.'
+              : isNetworkError
+                ? 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.'
+                : `Erro: ${msg || loadError.code || 'desconhecido'}. Seus dados estão no servidor.`}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button onClick={() => loadData()}
+            className="px-3 py-1.5 rounded-lg font-bold text-xs"
+            style={{ backgroundColor: '#92400e', color: '#fef3c7', border: '1px solid #b45309' }}>
+            🔄 Tentar novamente
+          </button>
+          {isAuthError && (
+            <button onClick={() => signOut()}
+              className="px-3 py-1.5 rounded-lg font-bold text-xs"
+              style={{ backgroundColor: '#7c3aed', color: '#fff', border: '1px solid #9333ea' }}>
+              Fazer logout
+            </button>
+          )}
+          <button onClick={() => setDismissed(true)}
+            style={{ color: '#d97706', opacity: 0.6, background: 'none', border: 'none', cursor: 'pointer', fontSize: 16 }}>✕</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AppShell() {
   const { activeModule } = useApp()
   const modules = [
@@ -66,6 +114,7 @@ function AppShell() {
     <div className="flex min-h-screen" style={{ backgroundColor: '#0e0919' }}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-y-auto">
+        <LoadErrorBanner />
         <main className="flex-1">
           {modules.map(m => (
             <div key={m.id} style={{ display: activeModule === m.id ? 'block' : 'none' }}>
@@ -151,6 +200,7 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/nova-senha" element={<ResetPasswordPage />} />
 
           <Route path={`/${ADMIN_SLUG}`} element={
             <RequireAdmin>

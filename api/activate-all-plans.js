@@ -3,19 +3,9 @@ const ANON_KEY    = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_A
 const OWNER_EMAIL = 'regeditelite@gmail.com'
 const ALLOWED_ORIGIN = 'https://minhalojarubinot.vercel.app'
 
-const rateWindow = new Map()
-function checkRateLimit(ip) {
-  const now = Date.now(); const windowMs = 60_000; const max = 10
-  const hits = (rateWindow.get(ip) || []).filter(t => now - t < windowMs)
-  if (hits.length >= max) return false
-  hits.push(now); rateWindow.set(ip, hits); return true
-}
-
 export default async function handler(req, res) {
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('X-Frame-Options', 'DENY')
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
-
   const origin = req.headers.origin
   if (origin === ALLOWED_ORIGIN) { res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN); res.setHeader('Vary', 'Origin') }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
@@ -23,13 +13,10 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown'
-  if (!checkRateLimit(ip)) return res.status(429).json({ error: 'Muitas tentativas. Aguarde.' })
-
   const token = req.headers.authorization?.slice(7)
   if (!token || token.length < 20) return res.status(401).json({ error: 'Não autorizado' })
 
-  // 1. Verificar token e obter userId via anon key (não precisa de service role)
+  // Verificar token
   let userId, userEmail
   try {
     const r = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
@@ -42,7 +29,6 @@ export default async function handler(req, res) {
 
   if (!userId) return res.status(401).json({ error: 'Não autorizado' })
 
-  // 2. Verificar se é admin — usa JWT do próprio usuário (RLS permite ler perfil próprio)
   const isOwner = userEmail === OWNER_EMAIL
   if (!isOwner) {
     try {
@@ -54,29 +40,32 @@ export default async function handler(req, res) {
     } catch { return res.status(500).json({ error: 'Erro interno' }) }
   }
 
-  // 3. Ativar plano — usa JWT do próprio usuário (RLS: "Users can update own profile")
-  //    Não precisa de service role para atualizar perfil próprio!
-  try {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    const authKey = serviceKey || token
-    const apiKey  = serviceKey || ANON_KEY
+  // Precisa de service role para atualizar TODOS os perfis (bypass RLS)
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!serviceKey) {
+    // Retorna o SQL para o usuário rodar manualmente no Supabase
+    return res.status(200).json({
+      success: false,
+      needsSQL: true,
+      sql: "UPDATE public.profiles SET plan_active = true, plan_expires_at = null;\nUPDATE public.profiles SET is_admin = true WHERE email = 'regeditelite@gmail.com';",
+      message: 'Service role key não configurada. Execute o SQL abaixo no Supabase SQL Editor.',
+    })
+  }
 
-    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
+  // Ativar todos os planos via service role
+  try {
+    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?plan_active=eq.false`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        apikey: apiKey,
-        Authorization: `Bearer ${authKey}`,
-        Prefer: 'return=minimal',
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        Prefer: 'return=representation',
       },
       body: JSON.stringify({ plan_active: true, plan_expires_at: null }),
     })
-    if (!updateRes.ok) {
-      const t = await updateRes.text()
-      console.error('[activate-plan]', t)
-      return res.status(500).json({ error: 'Erro ao ativar plano' })
-    }
+    if (!updateRes.ok) return res.status(500).json({ error: 'Erro ao ativar planos' })
+    const updated = await updateRes.json()
+    return res.status(200).json({ success: true, activated: updated?.length ?? 0 })
   } catch { return res.status(500).json({ error: 'Erro interno' }) }
-
-  return res.status(200).json({ success: true, email: userEmail })
 }

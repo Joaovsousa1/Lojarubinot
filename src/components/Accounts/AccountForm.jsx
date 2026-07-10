@@ -29,6 +29,7 @@ const EMPTY_SKILLS = { ml: '', sword: '', axe: '', dist: '', fist: '', club: '',
 
 const EMPTY = {
   charName: '',
+  email: '',
   server: '', vocation: 'Knight', level: '',
   buyPrice: '', sellPrice: '', status: 'disponível',
   skills: { ...EMPTY_SKILLS },
@@ -294,11 +295,19 @@ export default function AccountForm({ initial, servers, onSubmit, onClose }) {
       {/* Identity */}
       <div className="rounded-lg p-4 space-y-3" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050' }}>
         <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Identidade</div>
-        <div>
-          <label className={LABEL}>Nome do personagem</label>
-          <input type="text" className={INPUT} style={INPUT_STYLE}
-            value={form.charName} onChange={e => set('charName', e.target.value)}
-            placeholder="Ex: Lord Drakkar" />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={LABEL}>Nome do personagem</label>
+            <input type="text" className={INPUT} style={INPUT_STYLE}
+              value={form.charName} onChange={e => set('charName', e.target.value)}
+              placeholder="Ex: Lord Drakkar" />
+          </div>
+          <div>
+            <label className={LABEL}>E-mail da conta</label>
+            <input type="email" className={INPUT} style={INPUT_STYLE}
+              value={form.email} onChange={e => set('email', e.target.value)}
+              placeholder="conta@email.com" />
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div>

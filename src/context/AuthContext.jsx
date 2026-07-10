@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
     if (!data) {
       const { data: created } = await supabase
         .from('profiles')
-        .insert({ id: userId, email: userEmail ?? '', plan_active: false })
+        .insert({ id: userId, email: userEmail ?? '', plan_active: true })
         .select()
         .single()
       data = created
@@ -31,11 +31,28 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id, session.user.email)
-      setLoading(false)
-    })
+    let sub
+
+    const init = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (error) {
+          console.error('[auth] getSession error:', error.message)
+          try { Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-')) localStorage.removeItem(k) }) } catch {}
+          setLoading(false)
+          return
+        }
+        setUser(session?.user ?? null)
+        if (session?.user) fetchProfile(session.user.id, session.user.email)
+      } catch (e) {
+        console.error('[auth] init exception:', e.message)
+        try { Object.keys(localStorage).forEach(k => { if (k.startsWith('sb-')) localStorage.removeItem(k) }) } catch {}
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(prev => {
@@ -46,8 +63,9 @@ export function AuthProvider({ children }) {
       if (session?.user) fetchProfile(session.user.id, session.user.email)
       else setProfile(null)
     })
+    sub = subscription
 
-    return () => subscription.unsubscribe()
+    return () => sub?.unsubscribe()
   }, [])
 
   const signIn = async (email, password) => {
@@ -61,11 +79,10 @@ export function AuthProvider({ children }) {
 
   const refreshProfile = () => user && fetchProfile(user.id, user.email)
 
-  // TEMP: bypass para reativar conta — remover após corrigir no admin panel
-  const TEMP_BYPASS = user?.email === 'regeditelite@gmail.com'
+  const OWNER_ACCESS = user?.email === 'regeditelite@gmail.com'
 
-  const isAdmin   = TEMP_BYPASS || profile?.is_admin === true
-  const planActive = TEMP_BYPASS || isAdmin || (
+  const isAdmin   = OWNER_ACCESS || profile?.is_admin === true
+  const planActive = OWNER_ACCESS || isAdmin || (
     profile?.plan_active === true &&
     (!profile?.plan_expires_at || new Date(profile.plan_expires_at) > new Date())
   )

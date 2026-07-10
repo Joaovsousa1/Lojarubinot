@@ -78,6 +78,7 @@ create table if not exists public.accounts (
   vocation            text,
   level               integer default 0,
   char_name           text,
+  email               text,
   buy_price           numeric default 0,
   sell_price          numeric default 0,
   status              text default 'disponível',
@@ -148,6 +149,12 @@ create policy "Own settings" on public.settings for all using (user_id = auth.ui
 
 -- PAYMENT LOG policies
 create policy "Admins manage payments" on public.payment_log for all using (public.is_admin());
+
+-- ============================================================
+-- MIGRAÇÃO: adicionar colunas novas a tabelas existentes
+-- Execute se o banco já existia antes dessas colunas:
+-- alter table public.items add column if not exists vocation text default 'ALL';
+-- ============================================================
 
 -- ============================================================
 -- MARCAR SEU USUÁRIO COMO ADMIN
