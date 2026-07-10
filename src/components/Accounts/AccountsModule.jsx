@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react'
-import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X, DollarSign, LayoutGrid, List } from 'lucide-react'
+import { Plus, Pencil, Trash2, Star, Shield, Zap, Crown, Copy, Search, Megaphone, Check, X, DollarSign, LayoutGrid, List, Mail } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { formatCurrency, formatNumber, formatDate, VOCATION_COLORS, VOCATION_OUTFIT, VOCATION_BG, STATUS_COLORS } from '../../utils/helpers'
 import { OUTFITS_DATABASE, CUSTOM_OUTFIT_NAMES } from '../../data/outfitsDatabase'
@@ -774,6 +774,83 @@ function AccountListRow({ acc, onEdit, onDelete, onClone, onAnnounce, onSell }) 
   )
 }
 
+function EmailLookup() {
+  const { accounts } = useApp()
+  const [search, setSearch] = useState('')
+  const [copiedId, setCopiedId] = useState(null)
+
+  const withEmail = useMemo(() => accounts.filter(a => a.email), [accounts])
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    if (!q) return withEmail
+    return withEmail.filter(a =>
+      (a.email ?? '').toLowerCase().includes(q) ||
+      (a.charName ?? '').toLowerCase().includes(q) ||
+      (a.server ?? '').toLowerCase().includes(q)
+    )
+  }, [withEmail, search])
+
+  const copyEmail = (acc) => {
+    navigator.clipboard.writeText(acc.email)
+    setCopiedId(acc.id)
+    setTimeout(() => setCopiedId(null), 1500)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="relative max-w-md">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+        <input
+          type="text" value={search} placeholder="Buscar por personagem, email ou servidor..."
+          className="w-full pl-8 pr-3 py-2 rounded-lg text-sm text-white outline-none"
+          style={{ backgroundColor: '#2a2035', border: '1px solid #3a3050' }}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 text-gray-500">
+          {withEmail.length === 0 ? 'Nenhuma conta com e-mail cadastrado.' : `Nenhuma conta encontrada para "${search}".`}
+        </div>
+      ) : (
+        <div className="rounded-lg overflow-hidden" style={{ border: '1px solid #3a3050' }}>
+          {filtered.map((acc, i) => (
+            <div key={acc.id}
+              className="flex items-center gap-3 px-4 py-2.5 flex-wrap"
+              style={{
+                backgroundColor: i % 2 === 0 ? '#1a1025' : '#201830',
+                borderTop: i === 0 ? 'none' : '1px solid #2a2035',
+              }}>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full shrink-0"
+                style={{ backgroundColor: '#00000066', color: VOCATION_COLORS[acc.vocation] ?? '#6b7280' }}>
+                Lv {acc.level}
+              </span>
+              <div className="min-w-0" style={{ width: 180 }}>
+                <div className="text-white text-sm font-semibold truncate">{acc.charName || '—'}</div>
+                <div className="text-gray-500 text-xs truncate">{acc.server}</div>
+              </div>
+              <StatusBadge status={acc.status} />
+              <div className="flex-1 min-w-0 font-mono text-sm" style={{ color: '#a78bfa' }}>
+                {acc.email}
+              </div>
+              <button onClick={() => copyEmail(acc)}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs shrink-0 transition-colors"
+                style={{
+                  backgroundColor: copiedId === acc.id ? '#14532d' : '#1a1025',
+                  border: '1px solid ' + (copiedId === acc.id ? '#16a34a' : '#3a3050'),
+                  color: copiedId === acc.id ? '#4ade80' : '#9ca3af',
+                }}>
+                {copiedId === acc.id ? <><Check size={12} /> Copiado</> : <><Copy size={12} /> Copiar</>}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const SORT_OPTIONS = [
   { value: 'loyalty-desc', label: 'Loyalty ↓' },
   { value: 'loyalty-asc',  label: 'Loyalty ↑' },
@@ -868,6 +945,7 @@ export default function AccountsModule() {
       <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: '#1a1025', border: '1px solid #3a3050', width: 'fit-content' }}>
         {[
           { id: 'contas',  label: 'Contas' },
+          { id: 'email',   label: '📧 Email' },
           { id: 'loyalty', label: '⭐ Loyalty' },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -883,6 +961,9 @@ export default function AccountsModule() {
 
       {/* Loyalty tab */}
       {activeTab === 'loyalty' && <LoyaltyModule />}
+
+      {/* Email tab */}
+      {activeTab === 'email' && <EmailLookup />}
 
       {/* Contas tab content below */}
       {activeTab === 'contas' && <>
