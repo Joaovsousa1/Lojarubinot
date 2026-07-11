@@ -6,6 +6,8 @@ const o  = (name, file) => ({ name: clean(name), imageUrl: W + file + '_Male_Add
 const o0 = (name, file) => ({ name: clean(name), imageUrl: W + file + '_Male.gif' })
 const of = (name, file) => ({ name: clean(name), imageUrl: W + file + '_Female_Addon_3.gif' })
 const r  = (name, file) => ({ name, imageUrl: S + file })
+// Proxy de sprites da wiki oficial do RubinOT (usado quando nao ha imagem no wiki do Tibia)
+const wp = (name, type) => ({ name, imageUrl: `https://wiki.rubinot.com/api/outfit-proxy?type=${type}&head=78&body=106&legs=79&feet=0&addons=3&direction=5&animated=0&walk=0&size=0` })
 
 const BASE_OUTFITS = [
   // ── Vocação base (própria, automática ao promover) ──────────────────────
@@ -104,13 +106,15 @@ const CUSTOM_OUTFITS = [
   { name: 'Darkness Sentinel',             imageUrl: null },
   { name: 'Celestial Protector',           imageUrl: null },
   { name: 'Darklight Guardian (Axe)',      imageUrl: null },
-  { name: 'Twilight Guardian (Axe)',       imageUrl: null },
+  wp('Twilight Guardian (Axe)',            2525),
   { name: 'Darklight Guardian (Club)',     imageUrl: null },
-  { name: 'Twilight Guardian (Club)',      imageUrl: null },
+  wp('Twilight Guardian (Club)',           2526),
   { name: 'Darklight Guardian (Sword)',    imageUrl: null },
-  { name: 'Twilight Guardian (Sword)',     imageUrl: null },
+  wp('Twilight Guardian (Sword)',          2527),
+  // Bazar as vezes mostra sem o sufixo da arma -- assume Sword (skill mais comum de Knight)
+  wp('Twilight Guardian',                  2527),
   { name: 'Buozzi',                        imageUrl: null },
-  { name: 'Nordic Santa',                  imageUrl: null },
+  wp('Nordic Santa',                       2555),
   { name: "Brino's Magician",              imageUrl: null },
   r('Flame Reaper',                        'flame_reaper_male.gif'),
   r('Special Citizen',                     'special_citizen_male.gif'),
