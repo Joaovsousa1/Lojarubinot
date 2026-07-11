@@ -7,7 +7,12 @@ const o0 = (name, file) => ({ name: clean(name), imageUrl: W + file + '_Male.gif
 const of = (name, file) => ({ name: clean(name), imageUrl: W + file + '_Female_Addon_3.gif' })
 const r  = (name, file) => ({ name, imageUrl: S + file })
 // Proxy de sprites da wiki oficial do RubinOT (usado quando nao ha imagem no wiki do Tibia)
-const wp = (name, type) => ({ name, imageUrl: `https://wiki.rubinot.com/api/outfit-proxy?type=${type}&head=78&body=106&legs=79&feet=0&addons=3&direction=5&animated=0&walk=0&size=0` })
+// Cores default sao so um "boneco" generico de demonstracao (nao tem a ver com a cor real de nenhuma conta)
+const wp = (name, type, colors) => {
+  const { head = 78, body = 106, legs = 79, feet = 0, direction = 5 } = colors ?? {}
+  return { name, imageUrl: `https://wiki.rubinot.com/api/outfit-proxy?type=${type}&head=${head}&body=${body}&legs=${legs}&feet=${feet}&addons=3&direction=${direction}&animated=0&walk=0&size=0` }
+}
+const DARKLIGHT_COLORS = { head: 95, body: 113, legs: 39, feet: 115, direction: 3 }
 
 const BASE_OUTFITS = [
   // ── Vocação base (própria, automática ao promover) ──────────────────────
@@ -105,15 +110,17 @@ const CUSTOM_OUTFITS = [
   { name: 'Divine Dawn',                   imageUrl: null },
   { name: 'Darkness Sentinel',             imageUrl: null },
   { name: 'Celestial Protector',           imageUrl: null },
-  wp('Darklight Guardian (Axe)',           2519),
-  wp('Twilight Guardian (Axe)',            2525),
-  wp('Darklight Guardian (Club)',          2520),
-  wp('Twilight Guardian (Club)',           2526),
-  wp('Darklight Guardian (Sword)',         2521),
-  wp('Twilight Guardian (Sword)',          2527),
+  // Cores reais confirmadas numa conta de verdade (Jeff Bro, bazar #238816) -- muito
+  // melhor que a cor generica de demonstracao da wiki, que fica com cara errada
+  wp('Darklight Guardian (Axe)',           2519, DARKLIGHT_COLORS),
+  wp('Twilight Guardian (Axe)',            2525, DARKLIGHT_COLORS),
+  wp('Darklight Guardian (Club)',          2520, DARKLIGHT_COLORS),
+  wp('Twilight Guardian (Club)',           2526, DARKLIGHT_COLORS),
+  wp('Darklight Guardian (Sword)',         2521, DARKLIGHT_COLORS),
+  wp('Twilight Guardian (Sword)',          2527, DARKLIGHT_COLORS),
   // Bazar as vezes mostra sem o sufixo da arma -- assume Sword (skill mais comum de Knight/masculino)
-  wp('Darklight Guardian',                 2521),
-  wp('Twilight Guardian',                  2527),
+  wp('Darklight Guardian',                 2521, DARKLIGHT_COLORS),
+  wp('Twilight Guardian',                  2527, DARKLIGHT_COLORS),
   { name: 'Buozzi',                        imageUrl: null },
   wp('Nordic Santa',                       2555),
   { name: "Brino's Magician",              imageUrl: null },
