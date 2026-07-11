@@ -105,13 +105,14 @@ const CUSTOM_OUTFITS = [
   { name: 'Divine Dawn',                   imageUrl: null },
   { name: 'Darkness Sentinel',             imageUrl: null },
   { name: 'Celestial Protector',           imageUrl: null },
-  { name: 'Darklight Guardian (Axe)',      imageUrl: null },
+  wp('Darklight Guardian (Axe)',           2519),
   wp('Twilight Guardian (Axe)',            2525),
-  { name: 'Darklight Guardian (Club)',     imageUrl: null },
+  wp('Darklight Guardian (Club)',          2520),
   wp('Twilight Guardian (Club)',           2526),
-  { name: 'Darklight Guardian (Sword)',    imageUrl: null },
+  wp('Darklight Guardian (Sword)',         2521),
   wp('Twilight Guardian (Sword)',          2527),
-  // Bazar as vezes mostra sem o sufixo da arma -- assume Sword (skill mais comum de Knight)
+  // Bazar as vezes mostra sem o sufixo da arma -- assume Sword (skill mais comum de Knight/masculino)
+  wp('Darklight Guardian',                 2521),
   wp('Twilight Guardian',                  2527),
   { name: 'Buozzi',                        imageUrl: null },
   wp('Nordic Santa',                       2555),
