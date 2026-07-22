@@ -221,7 +221,7 @@ export function AppProvider({ children }) {
       person: row.person ?? '',
       amountRC: row.amount != null ? Number(row.amount) : null,
       amountPIX: row.amount_pix != null ? Number(row.amount_pix) : null,
-      dueAt: row.due_at, accountId: row.account_id ?? '',
+      dueAt: row.due_at, accountId: row.account_id ?? '', loyaltyId: row.loyalty_id ?? '',
       email: row.email ?? '',
       resolved: !!row.resolved, createdAt: row.created_at,
     }
@@ -233,7 +233,7 @@ export function AppProvider({ children }) {
       user_id: user?.id, type: note.type ?? 'geral', text: note.text,
       person: note.person || null,
       amount: note.amountRC ?? null, amount_pix: note.amountPIX ?? null,
-      due_at: note.dueAt || null, account_id: note.accountId || null,
+      due_at: note.dueAt || null, account_id: note.accountId || null, loyalty_id: note.loyaltyId || null,
       email: note.email || null,
       resolved: !!note.resolved,
     }

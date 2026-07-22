@@ -18,7 +18,7 @@ function isOverdue(note) {
 }
 
 // ─── Form (criar/editar) ─────────────────────────────────────────────────
-function NoteForm({ note, accounts, onSave, onClose }) {
+function NoteForm({ note, accounts, loyaltyAccounts, onSave, onClose }) {
   const [type, setType]         = useState(note?.type ?? 'geral')
   const [text, setText]         = useState(note?.text ?? '')
   const [person, setPerson]     = useState(note?.person ?? '')
@@ -26,7 +26,11 @@ function NoteForm({ note, accounts, onSave, onClose }) {
   const [amountPIX, setAmountPIX] = useState(note?.amountPIX ?? '')
   const [dueAt, setDueAt]       = useState(note?.dueAt ? note.dueAt.slice(0, 16) : '')
   const [accountId, setAccountId] = useState(note?.accountId ?? '')
+  const [loyaltyId, setLoyaltyId] = useState(note?.loyaltyId ?? '')
   const [email, setEmail]       = useState(note?.email ?? '')
+
+  const availableAccounts = useMemo(() => accounts.filter(a => a.status !== 'vendida'), [accounts])
+  const availableLoyalty  = useMemo(() => loyaltyAccounts.filter(a => a.status !== 'vendida'), [loyaltyAccounts])
 
   const canSave = text.trim().length > 0
 
@@ -39,6 +43,7 @@ function NoteForm({ note, accounts, onSave, onClose }) {
       amountPIX: type === 'fiado' && amountPIX !== '' ? Number(amountPIX) : null,
       dueAt: type === 'lembrete' && dueAt ? new Date(dueAt).toISOString() : null,
       accountId: accountId || '',
+      loyaltyId: loyaltyId || '',
       email: email.trim(),
     })
   }
@@ -101,12 +106,23 @@ function NoteForm({ note, accounts, onSave, onClose }) {
         )}
 
         <div>
-          <div className="text-xs text-gray-500 mb-1.5">Vincular a uma conta (opcional)</div>
+          <div className="text-xs text-gray-500 mb-1.5">Vincular uma conta (opcional)</div>
           <select value={accountId} onChange={e => setAccountId(e.target.value)}
             className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={FIELD}>
             <option value="">Nenhuma</option>
-            {accounts.map(a => (
+            {availableAccounts.map(a => (
               <option key={a.id} value={a.id}>{a.charName} {a.server ? `(${a.server})` : ''}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <div className="text-xs text-gray-500 mb-1.5">Vincular um Loyalty (opcional)</div>
+          <select value={loyaltyId} onChange={e => setLoyaltyId(e.target.value)}
+            className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={FIELD}>
+            <option value="">Nenhuma</option>
+            {availableLoyalty.map(a => (
+              <option key={a.id} value={a.id}>{a.email} {a.server ? `(${a.server})` : ''}</option>
             ))}
           </select>
         </div>
@@ -138,7 +154,7 @@ function NoteForm({ note, accounts, onSave, onClose }) {
 }
 
 // ─── Card individual ──────────────────────────────────────────────────────
-function NoteCard({ note, account, onEdit, onDelete, onToggleResolved }) {
+function NoteCard({ note, account, loyaltyAccount, onEdit, onDelete, onToggleResolved }) {
   const meta = TYPE_META[note.type] ?? TYPE_META.geral
   const overdue = isOverdue(note)
 
@@ -196,6 +212,12 @@ function NoteCard({ note, account, onEdit, onDelete, onToggleResolved }) {
         </div>
       )}
 
+      {loyaltyAccount && (
+        <div className="text-[11px] text-gray-500">
+          ⭐ {loyaltyAccount.email} {loyaltyAccount.server ? `(${loyaltyAccount.server})` : ''}
+        </div>
+      )}
+
       {note.email && (
         <div className="text-[11px] text-gray-500">
           ✉️ {note.email}
@@ -207,12 +229,14 @@ function NoteCard({ note, account, onEdit, onDelete, onToggleResolved }) {
 
 // ─── Módulo principal ─────────────────────────────────────────────────────
 export default function NotesModule() {
-  const { notes, accounts, addNote, updateNote, deleteNote, toggleNoteResolved } = useApp()
+  const { notes, accounts, settings, addNote, updateNote, deleteNote, toggleNoteResolved } = useApp()
+  const loyaltyAccounts = settings.loyaltyAccounts ?? []
   const [tab, setTab] = useState('todas')
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
 
   const accountsById = useMemo(() => Object.fromEntries(accounts.map(a => [a.id, a])), [accounts])
+  const loyaltyById  = useMemo(() => Object.fromEntries(loyaltyAccounts.map(a => [a.id, a])), [loyaltyAccounts])
 
   const filtered = useMemo(() => {
     let list = notes
@@ -283,14 +307,15 @@ export default function NotesModule() {
       ) : (
         <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
           {filtered.map(note => (
-            <NoteCard key={note.id} note={note} account={accountsById[note.accountId]}
+            <NoteCard key={note.id} note={note} account={accountsById[note.accountId]} loyaltyAccount={loyaltyById[note.loyaltyId]}
               onEdit={handleEdit} onDelete={handleDelete} onToggleResolved={toggleNoteResolved} />
           ))}
         </div>
       )}
 
       {showForm && (
-        <NoteForm note={editing} accounts={accounts} onClose={() => { setShowForm(false); setEditing(null) }} onSave={handleSave} />
+        <NoteForm note={editing} accounts={accounts} loyaltyAccounts={loyaltyAccounts}
+          onClose={() => { setShowForm(false); setEditing(null) }} onSave={handleSave} />
       )}
     </div>
   )
