@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, StickyNote, Clock, CircleDollarSign, Check, Undo2 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
-import { formatDateTime, formatRC, formatCurrency } from '../../utils/helpers'
+import { formatDateTime, formatRC, formatCurrency, getLoyaltyInfo } from '../../utils/helpers'
 import Modal from '../UI/Modal'
 
 const TYPE_META = {
@@ -30,7 +30,11 @@ function NoteForm({ note, accounts, loyaltyAccounts, onSave, onClose }) {
   const [email, setEmail]       = useState(note?.email ?? '')
 
   const availableAccounts = useMemo(() => accounts.filter(a => a.status !== 'vendida'), [accounts])
-  const availableLoyalty  = useMemo(() => loyaltyAccounts.filter(a => a.status !== 'vendida'), [loyaltyAccounts])
+  const availableLoyalty  = useMemo(() =>
+    loyaltyAccounts
+      .filter(a => a.status !== 'vendida')
+      .sort((a, b) => (b.loyaltyPoints ?? 0) - (a.loyaltyPoints ?? 0)),
+    [loyaltyAccounts])
 
   const canSave = text.trim().length > 0
 
@@ -121,9 +125,14 @@ function NoteForm({ note, accounts, loyaltyAccounts, onSave, onClose }) {
           <select value={loyaltyId} onChange={e => setLoyaltyId(e.target.value)}
             className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={FIELD}>
             <option value="">Nenhuma</option>
-            {availableLoyalty.map(a => (
-              <option key={a.id} value={a.id}>{a.email} {a.server ? `(${a.server})` : ''}</option>
-            ))}
+            {availableLoyalty.map(a => {
+              const { bonus } = getLoyaltyInfo(a.loyaltyPoints)
+              return (
+                <option key={a.id} value={a.id}>
+                  {bonus > 0 ? `+${bonus} · ` : ''}{a.email} {a.server ? `(${a.server})` : ''}
+                </option>
+              )
+            })}
           </select>
         </div>
 
@@ -214,7 +223,10 @@ function NoteCard({ note, account, loyaltyAccount, onEdit, onDelete, onToggleRes
 
       {loyaltyAccount && (
         <div className="text-[11px] text-gray-500">
-          ⭐ {loyaltyAccount.email} {loyaltyAccount.server ? `(${loyaltyAccount.server})` : ''}
+          ⭐ {(() => {
+            const { bonus } = getLoyaltyInfo(loyaltyAccount.loyaltyPoints)
+            return bonus > 0 ? `+${bonus} · ` : ''
+          })()}{loyaltyAccount.email} {loyaltyAccount.server ? `(${loyaltyAccount.server})` : ''}
         </div>
       )}
 

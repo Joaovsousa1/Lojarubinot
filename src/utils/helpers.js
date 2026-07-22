@@ -103,6 +103,27 @@ export const formatRC = (v) =>
 export const realSaleProfit = (sale, rcRate = 0.087) =>
   (sale.profitPIX || 0) + (sale.profitRC || 0) * rcRate
 
+export const LOYALTY_TIERS = [
+  { pts: 70, bonus: 10, title: 'Enlightened of RubinOT' },
+  { pts: 56, bonus: 9,  title: 'Savant of RubinOT' },
+  { pts: 42, bonus: 8,  title: 'Sage of RubinOT' },
+  { pts: 30, bonus: 7,  title: 'Guardian of RubinOT' },
+  { pts: 21, bonus: 6,  title: 'Keeper of RubinOT' },
+  { pts: 15, bonus: 5,  title: 'Warrior of RubinOT' },
+  { pts:  9, bonus: 4,  title: 'Squire of RubinOT' },
+  { pts:  6, bonus: 3,  title: 'Warden of RubinOT' },
+  { pts:  3, bonus: 2,  title: 'Steward of RubinOT' },
+  { pts:  1, bonus: 1,  title: 'Sentinel of RubinOT' },
+]
+
+export function getLoyaltyInfo(pts) {
+  const p = pts ?? 0
+  for (const tier of LOYALTY_TIERS) {
+    if (p >= tier.pts) return tier
+  }
+  return { pts: 0, bonus: 0, title: 'Scout of RubinOT' }
+}
+
 export const SET_COLORS = {
   'Sanguine':       { primary: '#dc2626', secondary: '#7f1d1d', accent: '#fca5a5', glow: '#dc262644' },
   'Grand Sanguine': { primary: '#b91c1c', secondary: '#7f1d1d', accent: '#fca5a5', glow: '#b91c1c44' },

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, Star, DollarSign, Search, TrendingUp, Users, CheckCircle } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
-import { formatCurrency, formatNumber, formatDate, STATUS_COLORS } from '../../utils/helpers'
+import { formatCurrency, formatNumber, formatDate, STATUS_COLORS, getLoyaltyInfo } from '../../utils/helpers'
 import Modal from '../UI/Modal'
 
 const INPUT = 'w-full px-3 py-2 rounded-lg text-sm text-white outline-none'
@@ -9,27 +9,6 @@ const INPUT_STYLE = { backgroundColor: '#1a1025', border: '1px solid #3a3050' }
 const LABEL = 'block text-xs text-gray-400 mb-1'
 
 const STATUSES = ['disponível', 'reservada', 'em negociação', 'vendida']
-
-const LOYALTY_TIERS = [
-  { pts: 70, bonus: 10, title: 'Enlightened of RubinOT' },
-  { pts: 56, bonus: 9,  title: 'Savant of RubinOT' },
-  { pts: 42, bonus: 8,  title: 'Sage of RubinOT' },
-  { pts: 30, bonus: 7,  title: 'Guardian of RubinOT' },
-  { pts: 21, bonus: 6,  title: 'Keeper of RubinOT' },
-  { pts: 15, bonus: 5,  title: 'Warrior of RubinOT' },
-  { pts:  9, bonus: 4,  title: 'Squire of RubinOT' },
-  { pts:  6, bonus: 3,  title: 'Warden of RubinOT' },
-  { pts:  3, bonus: 2,  title: 'Steward of RubinOT' },
-  { pts:  1, bonus: 1,  title: 'Sentinel of RubinOT' },
-]
-
-function getLoyaltyInfo(pts) {
-  const p = pts ?? 0
-  for (const tier of LOYALTY_TIERS) {
-    if (p >= tier.pts) return tier
-  }
-  return { pts: 0, bonus: 0, title: 'Scout of RubinOT' }
-}
 
 const EMPTY = {
   email: '', server: 'Todos', vipDays: '', loyaltyPoints: '',
