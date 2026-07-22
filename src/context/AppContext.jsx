@@ -218,7 +218,9 @@ export function AppProvider({ children }) {
   function dbToNote(row) {
     return {
       id: row.id, type: row.type ?? 'geral', text: row.text,
-      person: row.person ?? '', amount: row.amount != null ? Number(row.amount) : null,
+      person: row.person ?? '',
+      amountRC: row.amount != null ? Number(row.amount) : null,
+      amountPIX: row.amount_pix != null ? Number(row.amount_pix) : null,
       dueAt: row.due_at, accountId: row.account_id ?? '',
       resolved: !!row.resolved, createdAt: row.created_at,
     }
@@ -228,7 +230,8 @@ export function AppProvider({ children }) {
     return {
       id: note.id ?? generateId(),
       user_id: user?.id, type: note.type ?? 'geral', text: note.text,
-      person: note.person || null, amount: note.amount ?? null,
+      person: note.person || null,
+      amount: note.amountRC ?? null, amount_pix: note.amountPIX ?? null,
       due_at: note.dueAt || null, account_id: note.accountId || null,
       resolved: !!note.resolved,
     }

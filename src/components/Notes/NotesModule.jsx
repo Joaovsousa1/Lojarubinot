@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { Plus, Pencil, Trash2, StickyNote, Clock, CircleDollarSign, Check, Undo2 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
-import { formatDateTime, formatRC } from '../../utils/helpers'
+import { formatDateTime, formatRC, formatCurrency } from '../../utils/helpers'
 import Modal from '../UI/Modal'
 
 const TYPE_META = {
@@ -22,7 +22,8 @@ function NoteForm({ note, accounts, onSave, onClose }) {
   const [type, setType]         = useState(note?.type ?? 'geral')
   const [text, setText]         = useState(note?.text ?? '')
   const [person, setPerson]     = useState(note?.person ?? '')
-  const [amount, setAmount]     = useState(note?.amount ?? '')
+  const [amountRC, setAmountRC]   = useState(note?.amountRC ?? '')
+  const [amountPIX, setAmountPIX] = useState(note?.amountPIX ?? '')
   const [dueAt, setDueAt]       = useState(note?.dueAt ? note.dueAt.slice(0, 16) : '')
   const [accountId, setAccountId] = useState(note?.accountId ?? '')
 
@@ -33,7 +34,8 @@ function NoteForm({ note, accounts, onSave, onClose }) {
     onSave({
       type, text: text.trim(),
       person: type === 'fiado' ? person.trim() : '',
-      amount: type === 'fiado' && amount !== '' ? Number(amount) : null,
+      amountRC: type === 'fiado' && amountRC !== '' ? Number(amountRC) : null,
+      amountPIX: type === 'fiado' && amountPIX !== '' ? Number(amountPIX) : null,
       dueAt: type === 'lembrete' && dueAt ? new Date(dueAt).toISOString() : null,
       accountId: accountId || '',
     })
@@ -67,16 +69,23 @@ function NoteForm({ note, accounts, onSave, onClose }) {
         </div>
 
         {type === 'fiado' && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             <div>
               <div className="text-xs text-gray-500 mb-1.5">Pessoa</div>
               <input value={person} onChange={e => setPerson(e.target.value)} placeholder="Nome"
                 className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={FIELD} />
             </div>
-            <div>
-              <div className="text-xs text-gray-500 mb-1.5">Valor (RC)</div>
-              <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0"
-                className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={FIELD} />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="text-xs text-gray-500 mb-1.5">Valor (RC)</div>
+                <input type="number" value={amountRC} onChange={e => setAmountRC(e.target.value)} placeholder="0"
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={FIELD} />
+              </div>
+              <div>
+                <div className="text-xs text-gray-500 mb-1.5">Valor (R$)</div>
+                <input type="number" value={amountPIX} onChange={e => setAmountPIX(e.target.value)} placeholder="0,00"
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={FIELD} />
+              </div>
             </div>
           </div>
         )}
@@ -155,10 +164,14 @@ function NoteCard({ note, account, onEdit, onDelete, onToggleResolved }) {
         {note.text}
       </div>
 
-      {note.type === 'fiado' && (note.person || note.amount) && (
+      {note.type === 'fiado' && (note.person || note.amountRC || note.amountPIX) && (
         <div className="flex items-center gap-1.5 text-xs" style={{ color: '#fbbf24' }}>
           <CircleDollarSign size={13} />
-          {note.person || 'Alguém'} {note.amount ? `— ${formatRC(note.amount)}` : ''}
+          {note.person || 'Alguém'}
+          {(note.amountRC || note.amountPIX) && ' — '}
+          {note.amountRC ? formatRC(note.amountRC) : ''}
+          {note.amountRC && note.amountPIX ? ' · ' : ''}
+          {note.amountPIX ? formatCurrency(note.amountPIX) : ''}
         </div>
       )}
 

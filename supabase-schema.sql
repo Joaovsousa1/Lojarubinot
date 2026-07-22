@@ -123,6 +123,7 @@ create table if not exists public.notes (
   text        text not null,               -- descrição livre
   person      text,                        -- fiado: quem pegou
   amount      numeric,                     -- fiado: quanto (RC)
+  amount_pix  numeric,                     -- fiado: quanto (R$)
   due_at      timestamptz,                 -- lembrete: prazo (ex: fim do leilão)
   account_id  text references public.accounts(id) on delete set null,
   resolved    boolean default false,
@@ -176,6 +177,7 @@ create policy "Own notes" on public.notes for all using (user_id = auth.uid() or
 -- alter table public.items add column if not exists vocation text default 'ALL';
 alter table public.accounts add column if not exists auras text[] default '{}';
 alter table public.accounts add column if not exists battle_pass jsonb default '[]';
+alter table public.notes add column if not exists amount_pix numeric;
 -- ============================================================
 
 -- ============================================================
