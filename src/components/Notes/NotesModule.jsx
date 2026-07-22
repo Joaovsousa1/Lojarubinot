@@ -26,6 +26,7 @@ function NoteForm({ note, accounts, onSave, onClose }) {
   const [amountPIX, setAmountPIX] = useState(note?.amountPIX ?? '')
   const [dueAt, setDueAt]       = useState(note?.dueAt ? note.dueAt.slice(0, 16) : '')
   const [accountId, setAccountId] = useState(note?.accountId ?? '')
+  const [email, setEmail]       = useState(note?.email ?? '')
 
   const canSave = text.trim().length > 0
 
@@ -38,6 +39,7 @@ function NoteForm({ note, accounts, onSave, onClose }) {
       amountPIX: type === 'fiado' && amountPIX !== '' ? Number(amountPIX) : null,
       dueAt: type === 'lembrete' && dueAt ? new Date(dueAt).toISOString() : null,
       accountId: accountId || '',
+      email: email.trim(),
     })
   }
 
@@ -107,6 +109,12 @@ function NoteForm({ note, accounts, onSave, onClose }) {
               <option key={a.id} value={a.id}>{a.charName} {a.server ? `(${a.server})` : ''}</option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <div className="text-xs text-gray-500 mb-1.5">Email (opcional)</div>
+          <input value={email} onChange={e => setEmail(e.target.value)} placeholder="conta@email.com"
+            className="w-full rounded-lg px-3 py-2 text-sm outline-none" style={FIELD} />
         </div>
 
         <div className="flex gap-2 pt-1">
@@ -185,6 +193,12 @@ function NoteCard({ note, account, onEdit, onDelete, onToggleResolved }) {
       {account && (
         <div className="text-[11px] text-gray-500">
           🔗 {account.charName} {account.server ? `(${account.server})` : ''}
+        </div>
+      )}
+
+      {note.email && (
+        <div className="text-[11px] text-gray-500">
+          ✉️ {note.email}
         </div>
       )}
     </div>

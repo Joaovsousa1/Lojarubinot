@@ -126,6 +126,7 @@ create table if not exists public.notes (
   amount_pix  numeric,                     -- fiado: quanto (R$)
   due_at      timestamptz,                 -- lembrete: prazo (ex: fim do leilão)
   account_id  text references public.accounts(id) on delete set null,
+  email       text,                        -- email de contato (livre, sem precisar vincular conta)
   resolved    boolean default false,
   created_at  timestamptz default now()
 );
@@ -178,6 +179,7 @@ create policy "Own notes" on public.notes for all using (user_id = auth.uid() or
 alter table public.accounts add column if not exists auras text[] default '{}';
 alter table public.accounts add column if not exists battle_pass jsonb default '[]';
 alter table public.notes add column if not exists amount_pix numeric;
+alter table public.notes add column if not exists email text;
 -- ============================================================
 
 -- ============================================================
