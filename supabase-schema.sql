@@ -115,6 +115,20 @@ create table if not exists public.payment_log (
   paid_at  timestamptz default now()
 );
 
+-- 7. NOTES (anotações: fiado / lembretes / geral)
+create table if not exists public.notes (
+  id          text primary key,
+  user_id     uuid references public.profiles(id) on delete cascade not null,
+  type        text default 'geral',        -- 'fiado' | 'lembrete' | 'geral'
+  text        text not null,               -- descrição livre
+  person      text,                        -- fiado: quem pegou
+  amount      numeric,                     -- fiado: quanto (RC)
+  due_at      timestamptz,                 -- lembrete: prazo (ex: fim do leilão)
+  account_id  text references public.accounts(id) on delete set null,
+  resolved    boolean default false,
+  created_at  timestamptz default now()
+);
+
 -- ============================================================
 -- ROW LEVEL SECURITY
 -- ============================================================
@@ -125,6 +139,7 @@ alter table public.items       enable row level security;
 alter table public.accounts    enable row level security;
 alter table public.settings    enable row level security;
 alter table public.payment_log enable row level security;
+alter table public.notes       enable row level security;
 
 -- Helper: is current user admin?
 create or replace function public.is_admin()
@@ -151,6 +166,9 @@ create policy "Own settings" on public.settings for all using (user_id = auth.ui
 
 -- PAYMENT LOG policies
 create policy "Admins manage payments" on public.payment_log for all using (public.is_admin());
+
+-- NOTES policies
+create policy "Own notes" on public.notes for all using (user_id = auth.uid() or public.is_admin());
 
 -- ============================================================
 -- MIGRAÇÃO: adicionar colunas novas a tabelas existentes

@@ -24,6 +24,7 @@ export function AppProvider({ children }) {
   const [coins, setCoins]       = useState([])
   const [items, setItems]       = useState([])
   const [accounts, setAccounts] = useState([])
+  const [notes, setNotes]       = useState([])
   const [settings, setSettings] = useState(DEFAULT_SETTINGS)
   const [activeModule, setActiveModule] = useState(
     () => sessionStorage.getItem('rubinot_module') ?? 'dashboard'
@@ -74,11 +75,13 @@ export function AppProvider({ children }) {
       { data: c, error: ce },
       { data: it, error: ie },
       { data: ac, error: ae },
+      { data: nt, error: ne },
       { data: st, error: se },
     ] = await Promise.all([
       supabase.from('coins').select('*').eq('user_id', userId).order('date', { ascending: false }),
       supabase.from('items').select('*').eq('user_id', userId).order('date_entry', { ascending: false }),
       supabase.from('accounts').select('*').eq('user_id', userId).order('date_entry', { ascending: false }),
+      supabase.from('notes').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       supabase.from('settings').select('*').eq('user_id', userId).single(),
     ])
 
@@ -90,10 +93,12 @@ export function AppProvider({ children }) {
       console.error('[loadData] erro:', errInfo)
       setLoadError(errInfo)
     }
+    if (ne) console.error('[loadData] notes:', ne.code, ne.message)
 
     if (!ce) setCoins((c ?? []).map(dbToCoin))
     if (!ie) setItems((it ?? []).map(dbToItem))
     if (!ae) setAccounts((ac ?? []).map(dbToAccount))
+    if (!ne) setNotes((nt ?? []).map(dbToNote))
     if (se && se.code !== 'PGRST116') {
       console.error('[loadData] settings:', se.code, se.message)
       addToast(`Erro ao carregar configurações: ${se.message}`)
@@ -119,7 +124,7 @@ export function AppProvider({ children }) {
     if (uid === loadedForId.current) return
     loadedForId.current = uid
     if (uid) loadData(uid)
-    else { setCoins([]); setItems([]); setAccounts([]); setDataLoaded(false) }
+    else { setCoins([]); setItems([]); setAccounts([]); setNotes([]); setDataLoaded(false) }
   }, [user?.id, loadData])
 
   // ── DB shape converters ────────────────────────────────────────────────────
@@ -207,6 +212,25 @@ export function AppProvider({ children }) {
       mounts: acc.mounts ?? [], notable_items: acc.notableItems ?? [],
       auras: acc.auras ?? [], battle_pass: acc.battlePass ?? [],
       notes: acc.notes, screenshot: acc.screenshot,
+    }
+  }
+
+  function dbToNote(row) {
+    return {
+      id: row.id, type: row.type ?? 'geral', text: row.text,
+      person: row.person ?? '', amount: row.amount != null ? Number(row.amount) : null,
+      dueAt: row.due_at, accountId: row.account_id ?? '',
+      resolved: !!row.resolved, createdAt: row.created_at,
+    }
+  }
+
+  function noteToDb(note) {
+    return {
+      id: note.id ?? generateId(),
+      user_id: user?.id, type: note.type ?? 'geral', text: note.text,
+      person: note.person || null, amount: note.amount ?? null,
+      due_at: note.dueAt || null, account_id: note.accountId || null,
+      resolved: !!note.resolved,
     }
   }
 
@@ -356,6 +380,51 @@ export function AppProvider({ children }) {
     }
   }
 
+  // ── Notes (anotações: fiado / lembretes / geral) ──────────────────────────
+  const addNote = async (note) => {
+    const id = generateId()
+    const newNote = { ...note, id, createdAt: new Date().toISOString(), resolved: false }
+    setNotes(prev => [newNote, ...prev])
+    const { error } = await supabase.from('notes').insert(noteToDb(newNote))
+    if (error) {
+      setNotes(prev => prev.filter(n => n.id !== newNote.id))
+      addToast(`Erro ao salvar anotação: ${error.message}`)
+      console.error('[addNote]', error)
+    } else {
+      addToast('Anotação salva!', 'success')
+    }
+  }
+
+  const updateNote = async (id, updates) => {
+    const prev = notes.find(n => n.id === id)
+    if (!prev) return
+    const updated = { ...prev, ...updates }
+    setNotes(list => list.map(n => n.id === id ? updated : n))
+    const { error } = await supabase.from('notes').update(noteToDb(updated)).eq('id', id).eq('user_id', user.id)
+    if (error) {
+      setNotes(list => list.map(n => n.id === id ? prev : n))
+      addToast(`Erro ao atualizar anotação: ${error.message}`)
+      console.error('[updateNote]', error)
+    }
+  }
+
+  const deleteNote = async (id) => {
+    const backup = notes.find(n => n.id === id)
+    setNotes(prev => prev.filter(n => n.id !== id))
+    const { error } = await supabase.from('notes').delete().eq('id', id).eq('user_id', user.id)
+    if (error) {
+      if (backup) setNotes(prev => [backup, ...prev])
+      addToast(`Erro ao excluir anotação: ${error.message}`)
+      console.error('[deleteNote]', error)
+    }
+  }
+
+  const toggleNoteResolved = (id) => {
+    const prev = notes.find(n => n.id === id)
+    if (!prev) return
+    updateNote(id, { resolved: !prev.resolved })
+  }
+
   // ── Settings ───────────────────────────────────────────────────────────────
   // Usa settingsRef.current (sempre atualizado) para evitar stale closure quando
   // múltiplas chamadas acontecem antes de um re-render (ex: add server + save prices)
@@ -451,15 +520,16 @@ export function AppProvider({ children }) {
 
   return (
     <AppContext.Provider value={{
-      coins, items, accounts, settings, activeModule, setActiveModule: setActiveModulePersist, accountsTab, setAccountsTab, dataLoaded,
+      coins, items, accounts, notes, settings, activeModule, setActiveModule: setActiveModulePersist, accountsTab, setAccountsTab, dataLoaded,
       toasts, removeToast,
       addCoinTransaction, deleteCoinTransaction,
       addItem, updateItem, deleteItem, sellItem,
       addAccount, updateAccount, deleteAccount,
+      addNote, updateNote, deleteNote, toggleNoteResolved,
       addLoyaltyAccount, updateLoyaltyAccount, deleteLoyaltyAccount,
       updateSettings, addServer, removeServer,
       exportData, importData,
-      setCoins, setItems, setAccounts,
+      setCoins, setItems, setAccounts, setNotes,
       loadData: reloadData, loadError,
     }}>
       {children}

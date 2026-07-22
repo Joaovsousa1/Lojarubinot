@@ -11,6 +11,7 @@ import ItemsModule from './components/Items/ItemsModule'
 import AccountsModule from './components/Accounts/AccountsModule'
 import Settings from './components/Settings/Settings'
 import ToolsModule from './components/Tools/ToolsModule'
+import NotesModule from './components/Notes/NotesModule'
 
 import LoginPage from './pages/LoginPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
@@ -106,6 +107,7 @@ function AppShell() {
     { id: 'coins',     el: <CoinsModule /> },
     { id: 'items',     el: <ItemsModule /> },
     { id: 'accounts',  el: <AccountsModule /> },
+    { id: 'notes',     el: <NotesModule /> },
     { id: 'tools',     el: <ToolsModule /> },
     { id: 'reports',   el: <MonthlyReport /> },
     { id: 'settings',  el: <Settings /> },

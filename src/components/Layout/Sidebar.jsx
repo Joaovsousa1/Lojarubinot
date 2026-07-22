@@ -1,5 +1,5 @@
 import React from 'react'
-import { LayoutDashboard, Coins, Package, Users, Settings, Wrench, FileBarChart2 } from 'lucide-react'
+import { LayoutDashboard, Coins, Package, Users, Settings, Wrench, FileBarChart2, StickyNote } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 import { useAuth } from '../../context/AuthContext'
 
@@ -31,7 +31,7 @@ function GemIcon({ size = 28 }) {
 }
 
 export default function Sidebar() {
-  const { activeModule, setActiveModule, accountsTab, setAccountsTab, coins, items, accounts, settings } = useApp()
+  const { activeModule, setActiveModule, accountsTab, setAccountsTab, coins, items, accounts, notes, settings } = useApp()
   const { profile } = useAuth()
 
   const totalCoins   = coins.reduce((s, c) => c.type === 'entrada' ? s + c.quantity : s - c.quantity, 0)
@@ -39,6 +39,8 @@ export default function Sidebar() {
   const lowCoins     = totalCoins < minBalance
   const itemsInStock = items.reduce((s, i) => s + i.quantity, 0)
   const accAvailable = accounts.filter(a => a.status === 'disponível').length
+  const notesOpen    = notes.filter(n => !n.resolved).length
+  const notesOverdue = notes.some(n => !n.resolved && n.type === 'lembrete' && n.dueAt && new Date(n.dueAt) < new Date())
 
   const fmtCoins = totalCoins > 0
     ? (totalCoins >= 1000 ? Math.round(totalCoins / 1000) + 'k' : String(totalCoins))
@@ -58,6 +60,7 @@ export default function Sidebar() {
         { id: 'accounts', label: 'Contas',        Icon: Users,           badge: accAvailable || null, alert: false, subItems: [
           { id: 'loyalty', label: '⭐ Loyalty' },
         ]},
+        { id: 'notes',    label: 'Anotações',     Icon: StickyNote,      badge: notesOpen || null, alert: notesOverdue },
       ]
     },
     {
