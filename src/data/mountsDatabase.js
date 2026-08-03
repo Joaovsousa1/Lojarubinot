@@ -1,5 +1,7 @@
 const W = 'https://tibia.fandom.com/wiki/Special:FilePath/'
 const m = (name, file) => ({ name, imageUrl: W + 'Mount_' + file + '.gif' })
+// Algumas montarias reaproveitam o sprite da criatura e nao tem um arquivo "Mount_*" proprio na wiki
+const m0 = (name, file) => ({ name, imageUrl: W + file + '.gif' })
 
 const BASE_MOUNTS = [
   // ── Store Mounts ──────────────────────────────────────────────────────────
@@ -86,7 +88,9 @@ const BASE_MOUNTS = [
   m('Flaming Wrath',        'Flaming_Wrath'),
   m('Ice Witch',            'Ice_Witch'),
   m('Dawnfire Asura',       'Dawnfire_Asura'),
-  m('Mutated Abomination',  'Mutated_Abomination'),
+  m0('Mutated Abomination', 'Mutated_Abomination'),
+  m0('Soul Phoenix',        'Soul_Phoenix'),
+  m0('Krakoloss',           'Krakoloss'),
 ]
 
 // Exclusivas do RubinOT (não existem no Tibia base) — usadas pra destacar
