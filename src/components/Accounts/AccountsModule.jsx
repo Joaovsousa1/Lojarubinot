@@ -71,7 +71,7 @@ function SkillRow({ skills = {} }) {
     { key: 'fist',      label: 'Fist',  color: '#34d399' },
     { key: 'club',      label: 'Club',  color: '#60a5fa' },
     { key: 'shielding', label: 'Shld',  color: '#fbbf24' },
-  ].filter(s => skills[s.key] > 0)
+  ].filter(s => skills[s.key] >= 80)
 
   if (voc.length === 0) return null
 
@@ -102,26 +102,28 @@ function generateSalesText(acc) {
   const loyaltyBonus = getLoyaltyBonus(acc.loyaltySkill)
   const loyaltyStr   = loyaltyBonus > 0 ? ` +${loyaltyBonus} skill` : ''
 
-  if (skills.ml > 0) {
+  // Skills abaixo de 80 costumam ser incidentais (fora da vocação do char) e viram ruído no anuncio
+  const mlShown = skills.ml >= 80
+  if (mlShown) {
     add(`✨ Magic Level ${skills.ml}${loyaltyStr}`)
   }
 
   const combatSkills = [
-    skills.sword > 0 && `Sword ${skills.sword}`,
-    skills.axe   > 0 && `Axe ${skills.axe}`,
-    skills.club  > 0 && `Club ${skills.club}`,
-    skills.dist  > 0 && `Dist ${skills.dist}`,
-    skills.fist  > 0 && `Fist ${skills.fist}`,
+    skills.sword >= 80 && `Sword ${skills.sword}`,
+    skills.axe   >= 80 && `Axe ${skills.axe}`,
+    skills.club  >= 80 && `Club ${skills.club}`,
+    skills.dist  >= 80 && `Dist ${skills.dist}`,
+    skills.fist  >= 80 && `Fist ${skills.fist}`,
   ].filter(Boolean)
 
   if (combatSkills.length) {
-    const loy = skills.ml === 0 ? loyaltyStr : ''
+    const loy = !mlShown ? loyaltyStr : ''
     add(`⚔️  ${combatSkills.join(' | ')}${loy}`)
-  } else if (skills.ml === 0 && loyaltyBonus > 0) {
+  } else if (!mlShown && loyaltyBonus > 0) {
     add(`✨ Loyalty +${loyaltyBonus} skill`)
   }
 
-  if (skills.shielding > 0) add(`🛡️ Shielding ${skills.shielding}`)
+  if (skills.shielding >= 80) add(`🛡️ Shielding ${skills.shielding}`)
 
   if (acc.vipDays > 0) {
     add(`⏳ ${fmt(acc.vipDays)} dias de VIP`)
