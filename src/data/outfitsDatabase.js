@@ -179,6 +179,7 @@ const CUSTOM_OUTFITS = [
   wp('Eclipse Priest (Sorcerer/Druid)',    2720),
   wp('Eclipse Priestess (Sorcerer/Druid)', 2721),
   wp('Eclipse Priest (Knight)',            2722),
+  wp('Eclipse Warden',                     2722), // nome real in-game do Outfit 2722 (confirmado no bazar #258727)
   wp('Eclipse Priestess (Knight)',         2723),
   wp('Eclipse Priest (Monk)',              2724),
   wp('Eclipse Priestess (Monk)',           2725),
@@ -204,6 +205,8 @@ const CUSTOM_OUTFITS = [
   o('Draccoon Herald',                     'Outfit_Draccoon_Herald'),
   o('Decaying Defender',                   'Outfit_Decaying_Defender'),
   o('Rascoohan',                           'Outfit_Rascoohan'),
+  o('Demon Hunter',                        'Outfit_Demon_Hunter'),
+  o('Rift Warrior',                        'Outfit_Rift_Warrior'),
 ]
 
 export const OUTFITS_DATABASE = [...BASE_OUTFITS, ...CUSTOM_OUTFITS]
