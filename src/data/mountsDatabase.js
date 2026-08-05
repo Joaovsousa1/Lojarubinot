@@ -91,6 +91,7 @@ const BASE_MOUNTS = [
   m0('Mutated Abomination', 'Mutated_Abomination'),
   m0('Soul Phoenix',        'Soul_Phoenix'),
   m0('Krakoloss',           'Krakoloss'),
+  m0('Widow Queen',         'Widow_Queen'),
 ]
 
 // Exclusivas do RubinOT (não existem no Tibia base) — usadas pra destacar
