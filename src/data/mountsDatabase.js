@@ -2,6 +2,9 @@ const W = 'https://tibia.fandom.com/wiki/Special:FilePath/'
 const m = (name, file) => ({ name, imageUrl: W + 'Mount_' + file + '.gif' })
 // Algumas montarias reaproveitam o sprite da criatura e nao tem um arquivo "Mount_*" proprio na wiki
 const m0 = (name, file) => ({ name, imageUrl: W + file + '.gif' })
+// Proxy de sprites da wiki oficial do RubinOT (usado quando o arquivo da tibia.fandom nao existe/quebra)
+const mp = (name, type) =>
+  ({ name, imageUrl: `https://wiki.rubinot.com/api/outfit-proxy?type=${type}&head=0&body=0&legs=0&feet=0&addons=0&direction=3&animated=0&walk=0&size=0` })
 
 const BASE_MOUNTS = [
   // ── Store Mounts ──────────────────────────────────────────────────────────
@@ -62,10 +65,10 @@ const BASE_MOUNTS = [
   m('Deepling Tyrant',      'Deepling_Tyrant'),
   m('Gnarlhound',           'Gnarlhound'),
   m('Electric Surge',       'Electric_Surge'),
-  m('Tamed Panda',          'Tamed_Panda'),
+  mp('Tamed Panda',         402),
   m('Void Watcher',         'Void_Watcher'),
   m('Ironblight',           'Ironblight'),
-  m('Cinderhoof',           'Cinderhoof'),
+  mp('Cinderhoof',          851),
   m('Boar',                 'Boar'),
   m('Dawnfire Asura',       'Dawnfire_Asura'),
   m('Terror Bird',          'Terror_Bird'),
@@ -88,10 +91,18 @@ const BASE_MOUNTS = [
   m('Flaming Wrath',        'Flaming_Wrath'),
   m('Ice Witch',            'Ice_Witch'),
   m('Dawnfire Asura',       'Dawnfire_Asura'),
-  m0('Mutated Abomination', 'Mutated_Abomination'),
+  mp('Mutated Abomination', 1599),
   m0('Soul Phoenix',        'Soul_Phoenix'),
   m0('Krakoloss',           'Krakoloss'),
   m0('Widow Queen',         'Widow_Queen'),
+  mp('Savanna Ostrich',     1309),
+  mp('Coral Rhea',          1310),
+  mp('Eventide Nandu',      1311),
+  mp('Obstinate Ox',        1674),
+  mp('Donkey',              387),
+  mp('Tin Lizzard',         375),
+  mp('Gloom Maw',           1866),
+  mp('Sparkion',            883),
 ]
 
 // Exclusivas do RubinOT (não existem no Tibia base) — usadas pra destacar
