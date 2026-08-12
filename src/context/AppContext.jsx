@@ -7,9 +7,8 @@ const AppContext = createContext(null)
 
 const DEFAULT_SETTINGS = {
   servers: [
-    'Auroria','Belaria','Bellum','Divinian','Elysian','Etherian',
-    'Grimoria I','Grimoria II','Grimoria III','Grimoria IV',
-    'Halorian','Lunarian','Mystian','Serenian','Solarian',
+    'Auroria','Belaria','Bellum','Drakaria','Eldrian','Elysian',
+    'Lunarian','Malveria','Mystian','Obsidian','Solarian',
     'Spectrum','Tenebrium','Vesperia',
   ],
   coinPrices: { buy1k: 87, buy10k: 87, sell: 92 },
