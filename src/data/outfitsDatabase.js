@@ -100,6 +100,8 @@ const BASE_OUTFITS = [
 const CUSTOM_OUTFITS = [
   wp('Demonic Kid',                        2502),
   wp('Angelical Kid',                      2501),
+  // Confirmado via API ao vivo do RubinOT (bazar #278787, personagem Anacoins Ekprecin) em 04/09/2026
+  wp('Angelic Champion',                   2527),
   r('Gladiator',                           'Gladiator%20Male.gif'),
   r('King',                                'royal_king.gif'),
   r('Queen',                               'royal_queen.gif'),
@@ -207,10 +209,6 @@ const CUSTOM_OUTFITS = [
   o('Rascoohan',                           'Outfit_Rascoohan'),
   o('Demon Hunter',                        'Outfit_Demon_Hunter'),
   o('Rift Warrior',                        'Outfit_Rift_Warrior'),
-  wp('Yalaharian',                         324),
-  wp('Pirate',                             155),
-  wp('Warmaster',                          336),
-  wp('Norsewoman',                         252),
   wp('Poltergeist',                        1271),
 ]
 
