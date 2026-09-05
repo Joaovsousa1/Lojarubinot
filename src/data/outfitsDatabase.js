@@ -47,7 +47,9 @@ const BASE_OUTFITS = [
   o('Gnome Outfit',         'Outfit_Gnome'),
   o('Void Outfit',          'Outfit_Void'),
   o('Glooth Engineer Outfit','Outfit_Glooth_Engineer'),
-  o('Demon Outfit',         'Outfit_Demon'),
+  // "Demon Outfit" e o nome real no bazar (confirmado via API), diferente da maioria dos outfits
+  // que o bazar mostra sem o sufixo "Outfit" -- por isso nao passa pelo clean() aqui.
+  { name: 'Demon Outfit', imageUrl: W + 'Outfit_Demon_Male_Addon_3.gif' },
   o('Pirate Outfit',        'Outfit_Pirate'),
   o('Norseman Outfit',      'Outfit_Norseman'),
   of('Norsewoman Outfit',   'Outfit_Norseman'),
@@ -93,6 +95,14 @@ const BASE_OUTFITS = [
   o('Blacksmith Outfit',    'Outfit_Blacksmith'),
   o('Viking Outfit',        'Outfit_Viking'),
   o('Parcel Outfit',        'Outfit_Parcel'),
+
+  // ── Confirmados faltando via API ao vivo (bazar #278787, Anacoins Ekprecin) em 05/09/2026 ──
+  o('Jersey Outfit',        'Outfit_Jersey'),
+  o('Revenant Outfit',      'Outfit_Revenant'),
+  o('Orcsoberfest Garb',    'Outfit_Orcsoberfest_Garb'),
+  o('Fiend Slayer Outfit',  'Outfit_Fiend_Slayer'),
+  o('Percht Raider Outfit', 'Outfit_Percht_Raider'),
+  o('Illuminator Outfit',   'Outfit_Illuminator'),
 ]
 
 // Exclusivos do RubinOT (não existem no Tibia base) — usados pra destacar
@@ -100,7 +110,13 @@ const BASE_OUTFITS = [
 const CUSTOM_OUTFITS = [
   wp('Demonic Kid',                        2502),
   wp('Angelical Kid',                      2501),
-  // Confirmado via API ao vivo do RubinOT (bazar #278787, personagem Anacoins Ekprecin) em 04/09/2026
+  // Confirmado via API ao vivo do RubinOT (bazar #278787, personagem Anacoins Ekprecin) em 05/09/2026 --
+  // essas 3 variantes por arma vieram com o nome "Angelic Champion" na API, NAO "Twilight Guardian" como
+  // a wiki/base antiga tinha registrado nesses mesmos looktypes (2525-2527). Ver linhas do Twilight abaixo.
+  wp('Angelic Champion (Axe)',             2525),
+  wp('Angelic Champion (Club)',            2526),
+  wp('Angelic Champion (Sword)',           2527),
+  // Bazar as vezes mostra sem o sufixo da arma -- assume Sword (variante mais comum vista ate agora)
   wp('Angelic Champion',                   2527),
   r('Gladiator',                           'Gladiator%20Male.gif'),
   r('King',                                'royal_king.gif'),
@@ -115,14 +131,14 @@ const CUSTOM_OUTFITS = [
   // Cores reais confirmadas numa conta de verdade (Jeff Bro, bazar #238816) -- muito
   // melhor que a cor generica de demonstracao da wiki, que fica com cara errada
   wp('Darklight Guardian (Axe)',           2519, DARKLIGHT_COLORS),
-  wp('Twilight Guardian (Axe)',            2525, DARKLIGHT_COLORS),
   wp('Darklight Guardian (Club)',          2520, DARKLIGHT_COLORS),
-  wp('Twilight Guardian (Club)',           2526, DARKLIGHT_COLORS),
   wp('Darklight Guardian (Sword)',         2521, DARKLIGHT_COLORS),
-  wp('Twilight Guardian (Sword)',          2527, DARKLIGHT_COLORS),
   // Bazar as vezes mostra sem o sufixo da arma -- assume Sword (skill mais comum de Knight/masculino)
   wp('Darklight Guardian',                 2521, DARKLIGHT_COLORS),
-  wp('Twilight Guardian',                  2527, DARKLIGHT_COLORS),
+  // "Twilight Guardian" (contraparte feminina do Darklight) removido em 05/09/2026: os looktypes
+  // 2525-2527 que estavam aqui na verdade sao "Angelic Champion" (confirmado via API ao vivo, ver
+  // acima) -- provavelmente Twilight Guardian nunca existiu com esses IDs ou foi remapeado pelo
+  // RubinOT. Sem uma conta real confirmando o looktype certo, ficou de fora ate confirmar.
   wp('Buozzi',                             2536),
   wp('Nordic Santa',                       2555),
   wp("Brino's Magician",                   2557),
@@ -210,6 +226,7 @@ const CUSTOM_OUTFITS = [
   o('Demon Hunter',                        'Outfit_Demon_Hunter'),
   o('Rift Warrior',                        'Outfit_Rift_Warrior'),
   wp('Poltergeist',                        1271),
+  wp('Merry Garb',                         1383),
 ]
 
 export const OUTFITS_DATABASE = [...BASE_OUTFITS, ...CUSTOM_OUTFITS]
